@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>10 · DevOps e SRE com IA — ClaudeStudy</title>
+<link rel="stylesheet" href="../css/style.css">
+<script src="../js/site.js" defer></script>
+</head>
+<body data-root="..">
+<main>
+<article class="content">
+
+<span class="kicker">Disciplina 10</span>
+<h1>DevOps e SRE com IA</h1>
+<p class="lead">Pipelines gerados automaticamente, vulnerabilidades detectadas antes da produção, incidentes tratados com copilotos e agentes. A IA já está no fluxo de entrega e confiabilidade — do deploy à resposta a falhas.</p>
+
+<div class="objectives">
+  <h4>Ao finalizar esta disciplina você será capaz de:</h4>
+  <ul>
+    <li>Automatizar deploys, pipelines e releases com suporte de IA</li>
+    <li>Integrar copilotos e agentes ao ciclo de confiabilidade</li>
+    <li>Identificar e resolver falhas com apoio de diagnósticos inteligentes</li>
+    <li>Aumentar a segurança com análise assistida de vulnerabilidades</li>
+    <li>Gerar resumos, alertas e postmortems com base em dados reais</li>
+  </ul>
+</div>
+
+<!-- ============================================================ -->
+<h2 id="fundamentos">Fundamentos de DevOps e SRE</h2>
+<h3>Princípios e práticas do DevOps moderno</h3>
+<ul>
+  <li><strong>Cultura</strong> de responsabilidade compartilhada entre desenvolvimento e operações ("you build it, you run it").</li>
+  <li><strong>Automação</strong>: CI/CD, infraestrutura como código (Terraform, Pulumi), GitOps (Argo CD, Flux).</li>
+  <li><strong>Fluxo e feedback rápidos</strong>: lotes pequenos, deploys frequentes, observabilidade.</li>
+  <li><strong>Métricas DORA</strong>: frequência de deploy, lead time de mudanças, taxa de falha de mudanças e tempo de recuperação.</li>
+</ul>
+<h3>O papel do SRE e a cultura de confiabilidade</h3>
+<p><strong>Site Reliability Engineering</strong> (criado no Google) aplica engenharia de software a problemas de operação. Conceitos-chave:</p>
+<pre class="plain"><code>SLI  (indicador)  → o que medimos       ex.: % de requisições com sucesso em &lt; 300ms
+SLO  (objetivo)   → a meta interna      ex.: 99,9% em 30 dias
+SLA  (acordo)     → o contrato externo  ex.: 99,5%, com multa se violar
+Error budget      → 100% − SLO = 0,1% ≈ 43 min/mês de "falha permitida"
+                    → se sobrar budget: acelere releases; se acabar: priorize confiabilidade</code></pre>
+<p>Outros pilares: eliminar <em>toil</em> (trabalho manual repetitivo), postmortems <em>blameless</em>, on-call sustentável, planejamento de capacidade.</p>
+<h3>Diferenças e complementaridades entre DevOps e SRE</h3>
+<div class="table-wrap">
+<table>
+  <tr><th>DevOps</th><th>SRE</th></tr>
+  <tr><td>Filosofia/cultura e conjunto de práticas</td><td>Implementação concreta com papéis, métricas e processos</td></tr>
+  <tr><td>Foco em velocidade e fluxo de entrega</td><td>Foco em confiabilidade mensurável</td></tr>
+  <tr><td>"O quê"</td><td>"Como" — "class SRE implements DevOps"</td></tr>
+</table>
+</div>
+<h3>Onde a GenAI atua em cada um dos papéis</h3>
+<div class="table-wrap">
+<table>
+  <tr><th>Etapa</th><th>Uso de GenAI</th></tr>
+  <tr><td>Código / PR</td><td>Revisão automatizada, geração de testes, descrição de PR</td></tr>
+  <tr><td>CI/CD</td><td>Gerar e otimizar pipelines, diagnosticar builds quebrados, notas de release</td></tr>
+  <tr><td>Segurança</td><td>Triagem de achados SAST/DAST, sugestão de correções, análise de dependências</td></tr>
+  <tr><td>IaC</td><td>Gerar/revisar Terraform, Kubernetes manifests, detectar más configurações</td></tr>
+  <tr><td>Observabilidade</td><td>Consultas em linguagem natural, explicação de anomalias, resumos</td></tr>
+  <tr><td>Incidentes</td><td>Resumos, sugestões de mitigação via runbooks, ChatOps, rascunho de postmortem</td></tr>
+</table>
+</div>
+
+<!-- ============================================================ -->
+<h2 id="pipelines">Automação de pipelines e deploys com IA</h2>
+<h3>Geração assistida de pipelines e arquivos de configuração</h3>
+<div class="example">
+  <h4>Exemplo: prompt + pipeline gerado (GitHub Actions)</h4>
+<pre class="plain"><code>Gere um workflow GitHub Actions para este monorepo (Node 22, pnpm, Postgres nos testes):
+- jobs paralelos: lint, typecheck, unit; e2e depende de unit
+- cache de dependências; matriz só para unit (node 20 e 22)
+- build da imagem Docker e push para GHCR apenas na main
+- deploy em staging com aprovação manual para produção (environments)
+Explique cada decisão em comentários curtos.</code></pre>
+<pre><code>name: ci
+on: [push, pull_request]
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: pnpm }
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm lint
+  unit:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix: { node: [20, 22] }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: "${{ matrix.node }}", cache: pnpm }
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm test
+  # ... e2e (needs: unit), build-push (if: github.ref == 'refs/heads/main'), deploy</code></pre>
+</div>
+<div class="warning">Revise pipelines gerados com atenção a: permissões do <code>GITHUB_TOKEN</code> (use <code>permissions:</code> mínimas), actions de terceiros (fixe por SHA), segredos expostos em logs e gatilhos como <code>pull_request_target</code>.</div>
+
+<h3>Otimização de etapas com base em histórico de builds e deploys</h3>
+<p>Exporte dados de execução (duração por job/step, taxa de falha, testes <em>flaky</em>) e peça análise: quais steps dominam o tempo, quais testes falham intermitentemente, onde o cache não está funcionando. A IA cruza padrões ("o job e2e falha 3× mais às segundas — coincide com o refresh do banco de staging").</p>
+<h3>Sugestões automáticas de ajustes e paralelizações</h3>
+<p>Exemplos típicos: dividir testes em shards, rodar jobs independentes em paralelo, cachear camadas Docker, pular jobs quando só a documentação mudou (<code>paths-ignore</code>), executar só testes afetados no monorepo.</p>
+<h3>Geração de changelogs e notas de release com copilotos</h3>
+<div class="example">
+  <h4>Exemplo: notas de release a partir dos commits</h4>
+<pre><code>git log v2.3.0..HEAD --pretty="- %s (%h)" \
+  | claude -p "Gere notas de release em português para usuários finais: agrupe em Novidades, Melhorias e Correções; omita commits internos (chore, ci, refactor); destaque mudanças incompatíveis."</code></pre>
+</div>
+<p>Com <em>Conventional Commits</em>, ferramentas como release-please/semantic-release geram changelogs técnicos; a IA transforma em texto para o público certo.</p>
+
+<!-- ============================================================ -->
+<h2 id="devsecops">Segurança em pipelines com IA</h2>
+<h3>Introdução ao conceito de DevSecOps</h3>
+<p><strong>DevSecOps</strong> integra segurança em todo o ciclo ("shift left"): verificações automáticas a cada commit/PR, em vez de uma auditoria no fim. Camadas: SAST (código), SCA (dependências), segredos, IaC, imagens de container, DAST (aplicação rodando).</p>
+<h3>Geração assistida de regras de SAST e DAST</h3>
+<p>A IA é ótima para escrever regras customizadas para padrões específicos do seu código.</p>
+<div class="example">
+  <h4>Exemplo: regra Semgrep gerada para um padrão interno</h4>
+<pre><code># Prompt: "Crie uma regra Semgrep que detecte chamadas ao nosso cliente LLM
+# passando input do usuário diretamente no system prompt."
+rules:
+  - id: user-input-in-system-prompt
+    languages: [python]
+    severity: WARNING
+    message: &gt;
+      Entrada do usuário no system prompt facilita prompt injection.
+      Coloque-a na mensagem de usuário, delimitada por tags.
+    patterns:
+      - pattern: llm.complete(system=$X, ...)
+      - pattern-inside: |
+          def $F(..., request, ...):
+            ...
+      - metavariable-pattern:
+          metavariable: $X
+          pattern-either:
+            - pattern: request.$ATTR
+            - pattern: f"...{request.$ATTR}..."</code></pre>
+</div>
+<p>Para DAST (OWASP ZAP, Nuclei), a IA ajuda a gerar templates de varredura e cenários autenticados a partir do OpenAPI.</p>
+<h3>Automatização da detecção de vulnerabilidades via LLM</h3>
+<p>LLMs encontram classes de bugs que ferramentas baseadas em padrões não pegam (falhas de lógica de autorização, IDOR, condições de corrida) e reduzem ruído fazendo triagem de falsos positivos. Mas também geram falsos positivos — combine com ferramentas determinísticas e revisão humana. O Claude Code tem o comando <code>/security-review</code> e uma GitHub Action de revisão de segurança.</p>
+<h3>Validação de dependências e análise de pacotes com copilotos</h3>
+<ul>
+  <li>Verificar se o pacote <strong>existe</strong> e é o oficial (combate a <em>slopsquatting</em>/typosquatting).</li>
+  <li>Avaliar saúde: manutenção, número de mantenedores, scripts de instalação suspeitos, licença.</li>
+  <li>Resumir CVEs do <code>npm audit</code>/Dependabot e priorizar pelo que é realmente alcançável no seu código.</li>
+</ul>
+<h3>Geração automatizada de alertas de segurança em pipelines</h3>
+<p>Ao final do pipeline, um passo de IA consolida achados de várias ferramentas, remove duplicatas, prioriza por severidade e exposição, e publica um comentário único no PR ou um alerta no canal de segurança — com contexto e sugestão de correção, em vez de 200 linhas de saída bruta.</p>
+
+<!-- ============================================================ -->
+<h2 id="observabilidade">Monitoramento e observabilidade assistidos por IA</h2>
+<h3>Detecção de anomalias com explicação em linguagem natural</h3>
+<p>A detecção em si costuma ser estatística/ML (sazonalidade, desvio). A GenAI agrega a <strong>explicação</strong>: "a latência p99 do checkout subiu 4× às 14h05, logo após o deploy v2.4.1; o aumento está concentrado em chamadas ao serviço de frete, que passou a responder com timeout".</p>
+<h3>Consultas conversacionais a métricas e logs</h3>
+<div class="example">
+  <h4>Exemplo: linguagem natural → PromQL</h4>
+<pre class="plain"><code>Pergunta: "qual a taxa de erro 5xx do serviço checkout nos últimos 30 min, por rota?"
+
+Gerado:
+sum by (route) (rate(http_requests_total{service="checkout", status=~"5.."}[5m]))
+/
+sum by (route) (rate(http_requests_total{service="checkout"}[5m]))</code></pre>
+</div>
+<p>Plataformas como Datadog, Grafana, New Relic, Dynatrace e Elastic já embutem assistentes; também é possível conectar um agente a Prometheus/Loki/Grafana via servidores MCP.</p>
+<h3>Insights e correlações automáticas com múltiplas fontes</h3>
+<p>O maior valor está em cruzar fontes que um humano olharia separadamente: deploys, feature flags, métricas, logs, traces, mudanças de infraestrutura, incidentes de provedores. Um agente com acesso de leitura a todas elas monta uma linha do tempo correlacionada.</p>
+<h3>Geração automatizada de resumos e dashboards</h3>
+<p>Resumos diários/semanais de saúde (SLOs, consumo de error budget, top erros), e geração de dashboards como código (JSON do Grafana, Terraform) a partir de uma descrição.</p>
+
+<!-- ============================================================ -->
+<h2 id="incidentes">Resposta a incidentes com suporte de IA</h2>
+<h3>Geração automática de resumos de incidentes</h3>
+<p>Durante um incidente, quem chega no meio precisa de contexto rápido. A IA lê o canal do incidente, alertas e timeline e produz: o que está acontecendo, impacto, hipóteses, o que já foi tentado, quem está fazendo o quê.</p>
+<h3>Sugestões de mitigação com base em runbooks e histórico</h3>
+<p>Com RAG sobre runbooks e postmortems anteriores, o copiloto sugere: "alerta semelhante em março (INC-231) foi resolvido aumentando o pool de conexões; runbook RB-12 passo 3". O humano decide e executa (ou aprova a execução).</p>
+<h3>Interações via ChatOps com copilotos operacionais</h3>
+<pre class="plain"><code>@sre-bot status checkout
+  → SLO 99,2% (meta 99,9%) · budget restante: 12% · 3 alertas ativos · último deploy há 40 min (v2.4.1)
+@sre-bot o que mudou na última hora?
+  → deploy v2.4.1 (PR #812: novo cliente de frete) · flag "frete-v2" ativada para 50%
+@sre-bot sugerir mitigação
+  → desativar flag "frete-v2" (reversível, baixo risco) — [Aprovar] [Recusar]</code></pre>
+<h3>Rascunhos automáticos de postmortem com base em dados reais</h3>
+<div class="example">
+  <h4>Exemplo: template de postmortem blameless + prompt</h4>
+<pre class="plain"><code># Postmortem — INC-482: Lentidão no checkout
+## Resumo            (2–3 frases)
+## Impacto           (usuários afetados, duração, pedidos perdidos, SLO consumido)
+## Linha do tempo    (UTC, com fonte de cada evento)
+## Causa raiz        (técnica e contribuintes; "5 porquês")
+## Detecção          (como descobrimos; quanto tempo levou)
+## Resposta          (o que funcionou, o que não funcionou)
+## Ações             (dono, prazo, tipo: prevenir / detectar / mitigar)
+## Lições aprendidas
+
+Prompt: "Com base na timeline exportada do canal #inc-482, nos alertas e nos
+deploys anexados, preencha o template. Use linguagem blameless (sistemas e
+processos, não pessoas). Marque [VERIFICAR] tudo que for inferência."</code></pre>
+</div>
+<p>Ver também: runbooks/playbooks na <a href="d04-design-docs.html#formatos">Disciplina 04</a>.</p>
+
+<!-- ============================================================ -->
+<h2 id="agentes-operacionais">Agentes operacionais e copilotos</h2>
+<h3>Diferença entre copilotos e agentes autônomos</h3>
+<div class="table-wrap">
+<table>
+  <tr><th></th><th>Copiloto</th><th>Agente autônomo</th></tr>
+  <tr><td>Iniciativa</td><td>Responde quando o humano pede</td><td>Age a partir de gatilhos (alertas, agenda)</td></tr>
+  <tr><td>Ações</td><td>Sugere; humano executa</td><td>Executa (dentro de limites)</td></tr>
+  <tr><td>Risco</td><td>Baixo</td><td>Maior — exige guardrails, auditoria, rollback</td></tr>
+</table>
+</div>
+<h3>Exemplos de agentes atuando em diagnóstico e ações corretivas</h3>
+<ul>
+  <li><strong>Diagnóstico</strong>: ao disparar um alerta, o agente coleta logs, métricas, eventos do Kubernetes e mudanças recentes e posta um relatório inicial no canal — antes de o on-call abrir o notebook.</li>
+  <li><strong>Correções de baixo risco</strong>: reiniciar um pod em CrashLoop conhecido, escalar réplicas dentro de limites, limpar disco de logs, desativar uma feature flag.</li>
+  <li><strong>Higiene</strong>: abrir PRs para atualizar dependências vulneráveis, corrigir testes flaky, ajustar alertas ruidosos.</li>
+</ul>
+<h3>Estratégias de adoção gradual com supervisão humana</h3>
+<div class="table-wrap">
+<table>
+  <tr><th>Nível</th><th>O agente…</th><th>Humano</th></tr>
+  <tr><td>0 — Observador</td><td>Só lê e resume</td><td>Decide e executa tudo</td></tr>
+  <tr><td>1 — Conselheiro</td><td>Sugere ações com justificativa</td><td>Executa</td></tr>
+  <tr><td>2 — Executor supervisionado</td><td>Executa após aprovação explícita</td><td>Aprova cada ação</td></tr>
+  <tr><td>3 — Autônomo limitado</td><td>Executa ações pré-aprovadas (allowlist, reversíveis) e reporta</td><td>Audita; aprova o resto</td></tr>
+</table>
+</div>
+<p>Avance de nível por <em>classe de ação</em>, com base no histórico de acertos. Sempre: credenciais de menor privilégio, ações reversíveis, registro de auditoria, botão de "parar", e dry-run por padrão.</p>
+<h3>Casos práticos em ambientes com alta exigência de confiabilidade</h3>
+<ul>
+  <li><strong>Finanças/pagamentos</strong>: agente nível 0–1 durante incidentes; nenhuma ação automática em sistemas de liquidação; foco em reduzir o tempo de diagnóstico (MTTD/MTTR).</li>
+  <li><strong>E-commerce em pico (Black Friday)</strong>: autoscaling e feature flags com limites pré-aprovados (nível 3), mudanças de código congeladas.</li>
+  <li><strong>Plataforma interna</strong>: agentes abrindo PRs de correção (nunca merge automático em produção sem revisão).</li>
+</ul>
+<div class="tip">O livro <a href="https://sre.google/books/">Site Reliability Engineering</a> do Google (gratuito online) continua sendo a base; a IA acelera as práticas, não as substitui.</div>
+
+<!-- ============================================================ -->
+<h2 id="recursos">Recursos para aprofundar</h2>
+<div class="resources">
+  <div class="box docs"><h4>📘 Documentação do Claude</h4><ul>
+    <li><a href="https://code.claude.com/docs/en/github-actions">Claude Code GitHub Actions</a></li>
+    <li><a href="https://code.claude.com/docs/en/headless">Headless mode (CI, scripts)</a></li>
+    <li><a href="https://code.claude.com/docs/en/security">Security</a></li>
+    <li><a href="https://code.claude.com/docs/en/monitoring-usage">Monitoring usage (OpenTelemetry)</a></li>
+    <li><a href="https://platform.claude.com/docs/en/agent-sdk/overview">Agent SDK</a> (para agentes operacionais)</li>
+    <li><a href="https://platform.claude.com/docs/en/build-with-claude/structured-outputs">Structured outputs</a> (alertas estruturados)</li>
+  </ul></div>
+  <div class="box reading"><h4>📄 Leituras</h4><ul>
+    <li><a href="https://sre.google/books/">Google SRE books</a> (gratuitos)</li>
+    <li><a href="https://genai.owasp.org/llm-top-10/">OWASP Top 10 LLM</a></li>
+    <li><a href="https://www.anthropic.com/engineering/building-effective-agents">Building effective agents</a></li>
+  </ul></div>
+  <div class="box videos"><h4>▶️ Vídeos</h4><ul>
+    <li><a href="https://www.youtube.com/results?search_query=AI+for+SRE+incident+response+LLM">Buscar: IA para SRE e incidentes</a></li>
+    <li><a href="https://www.youtube.com/results?search_query=SLO+error+budget+explained">Buscar: SLO e error budget</a></li>
+    <li><a href="https://www.youtube.com/results?search_query=DevSecOps+pipeline+semgrep+trivy">Buscar: DevSecOps com Semgrep/Trivy</a></li>
+    <li><a href="https://www.youtube.com/results?search_query=claude+code+github+actions">Buscar: Claude Code GitHub Actions</a></li>
+    <li><a href="https://www.youtube.com/@FullCycle">Full Cycle</a> — DevOps, Kubernetes, observabilidade</li>
+  </ul></div>
+  <div class="box courses"><h4>🎓 Cursos</h4><ul>
+    <li><a href="https://anthropic.skilljar.com/">Anthropic Academy</a></li>
+    <li><a href="https://www.deeplearning.ai/short-courses/evaluating-ai-agents/">Evaluating AI Agents</a> (para avaliar agentes operacionais)</li>
+    <li><a href="https://huggingface.co/learn/agents-course">Hugging Face Agents Course</a></li>
+  </ul></div>
+</div>
+
+<h2 id="exercicios">Exercícios e quiz</h2>
+<details><summary>Projeto — copiloto de incidentes</summary>
+<p>Monte um bot (Slack ou CLI) que, dado um serviço: lê métricas do Prometheus e logs (via MCP ou API), lista deploys recentes, resume o estado em 5 linhas, sugere mitigação a partir de 5 runbooks (RAG) e, ao final, gera o rascunho do postmortem. Mantenha o nível 1 (só sugere).</p></details>
+
+<div class="quiz" data-answer="b">
+  <div class="q">1. SLO de 99,9% mensal. Qual o error budget aproximado?</div>
+  <button class="opt" data-opt="a">4,3 minutos</button>
+  <button class="opt" data-opt="b">~43 minutos</button>
+  <button class="opt" data-opt="c">~7 horas</button>
+  <button class="opt" data-opt="d">Zero</button>
+  <div class="explain">0,1% de 30 dias (43.200 min) ≈ 43 min.</div>
+</div>
+<div class="quiz" data-answer="c">
+  <div class="q">2. Primeiro passo recomendado ao introduzir um agente operacional em produção?</div>
+  <button class="opt" data-opt="a">Dar acesso de admin para agilizar</button>
+  <button class="opt" data-opt="b">Deixá-lo reiniciar serviços livremente</button>
+  <button class="opt" data-opt="c">Começar como observador/conselheiro e evoluir por classe de ação</button>
+  <button class="opt" data-opt="d">Substituir o on-call</button>
+  <div class="explain">Adoção gradual com supervisão humana e menor privilégio.</div>
+</div>
+
+</article>
+</main>
+</body>
+</html>

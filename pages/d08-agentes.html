@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>08 · Desenvolvimento de Agentes — ClaudeStudy</title>
+<link rel="stylesheet" href="../css/style.css">
+<script src="../js/site.js" defer></script>
+</head>
+<body data-root="..">
+<main>
+<article class="content">
+
+<span class="kicker">Disciplina 08</span>
+<h1>Desenvolvimento de Agentes</h1>
+<p class="lead">Criar aplicações com IA é só o começo. Agentes definem objetivos, planejam, tomam decisões, executam ações e integram ferramentas externas de forma autônoma.</p>
+
+<div class="objectives">
+  <h4>Ao finalizar esta disciplina você será capaz de:</h4>
+  <ul>
+    <li>Desenvolver agentes que assumem processos do início ao fim</li>
+    <li>Criar equipes de agentes coordenados, cada um com um papel diferente</li>
+    <li>Orquestrar agentes para executar fluxos complexos de forma autônoma</li>
+    <li>Escolher o framework ideal para cada tipo de agente</li>
+    <li>Transformar fluxos manuais em soluções automatizadas com agentes</li>
+  </ul>
+</div>
+
+<!-- ============================================================ -->
+<h2 id="fundamentos">Fundamentos de Agentes</h2>
+<h3>O que são agentes e suas características</h3>
+<p>Um <strong>agente</strong> é um sistema em que um LLM <strong>dirige dinamicamente o próprio processo</strong>: decide quais ferramentas usar, em que ordem, e quando parar, com base no feedback do ambiente. Características:</p>
+<ul>
+  <li><strong>Autonomia</strong>: escolhe os próximos passos.</li>
+  <li><strong>Uso de ferramentas</strong>: APIs, bancos, código, navegador, outros agentes.</li>
+  <li><strong>Percepção do ambiente</strong>: observa resultados e erros.</li>
+  <li><strong>Persistência de objetivo</strong>: itera até concluir ou desistir de forma controlada.</li>
+  <li><strong>Memória</strong>: curto prazo (contexto) e, opcionalmente, longo prazo.</li>
+</ul>
+<div class="diagram">        ┌──────────── loop do agente ────────────┐
+Objetivo ─►  LLM decide ─► chama ferramenta ─► observa resultado ─┐
+        ▲                                                           │
+        └───────────────────── ainda não terminou? ◄────────────────┘
+                                   │ terminou
+                                   ▼
+                              resposta final</div>
+
+<h3>Diferenças entre aplicações com IA e agentes autônomos</h3>
+<div class="table-wrap">
+<table>
+  <tr><th></th><th>Aplicação com IA (workflow)</th><th>Agente autônomo</th></tr>
+  <tr><td>Quem define os passos</td><td>O código</td><td>O LLM, em tempo de execução</td></tr>
+  <tr><td>Previsibilidade</td><td>Alta</td><td>Menor</td></tr>
+  <tr><td>Custo/latência</td><td>Baixos e previsíveis</td><td>Maiores e variáveis</td></tr>
+  <tr><td>Ideal para</td><td>Tarefas bem definidas</td><td>Tarefas abertas, multi-passo, difíceis de prever</td></tr>
+</table>
+</div>
+<div class="tip">Antes de construir um agente, pergunte: a tarefa é complexa e difícil de especificar? O valor justifica o custo? O modelo é capaz? Erros podem ser detectados e corrigidos? Se alguma resposta for "não", prefira um workflow (<a href="https://www.anthropic.com/engineering/building-effective-agents">Building effective agents</a>).</div>
+
+<h3>Ciclo de vida: objetivo, plano, execução, adaptação</h3>
+<ol>
+  <li><strong>Objetivo</strong>: recebido do usuário ou de um gatilho (evento, agenda).</li>
+  <li><strong>Plano</strong>: decompõe em passos (explícito, num "todo list", ou implícito).</li>
+  <li><strong>Execução</strong>: chama ferramentas, coleta resultados.</li>
+  <li><strong>Adaptação</strong>: replaneja diante de erros ou informações novas; pede ajuda humana quando necessário; encerra com um relatório.</li>
+</ol>
+
+<h3>Tipos de agentes: baseados em ferramenta, com memória, reflexivos</h3>
+<ul>
+  <li><strong>Baseados em ferramenta</strong>: o núcleo é o loop de tool use (ex.: agente de suporte que consulta pedidos).</li>
+  <li><strong>Com memória</strong>: lembram preferências e fatos entre sessões (memória de longo prazo em banco/arquivos).</li>
+  <li><strong>Reflexivos</strong>: avaliam e criticam a própria saída antes de entregar (reflection / evaluator-optimizer).</li>
+</ul>
+
+<!-- ============================================================ -->
+<h2 id="frameworks">Visão Geral de Frameworks</h2>
+<h3>Estilos de agentes: stateful, conversacional, por papéis e com planejamento</h3>
+<ul>
+  <li><strong>Stateful (grafo de estados)</strong>: fluxo modelado como grafo com estado explícito e checkpoints — LangGraph.</li>
+  <li><strong>Conversacional</strong>: agente de chat com ferramentas e memória — LangChain agents, ADK.</li>
+  <li><strong>Por papéis (role-based)</strong>: "equipe" de agentes com papel, objetivo e backstory — CrewAI.</li>
+  <li><strong>Com planejamento</strong>: um planner gera o plano, executores seguem — padrões plan-and-execute.</li>
+</ul>
+
+<h3>Comparativo conceitual entre LangChain, LangGraph, CrewAI e ADK</h3>
+<div class="table-wrap">
+<table>
+  <tr><th></th><th>LangChain</th><th>LangGraph</th><th>CrewAI</th><th>Google ADK</th></tr>
+  <tr><td>Abstração central</td><td>Chains, agents, integrações</td><td>Grafo de estados (nós/arestas)</td><td>Crew de agentes com papéis + tasks</td><td>Agents, tools, sessions, runners</td></tr>
+  <tr><td>Controle do fluxo</td><td>Médio</td><td>Alto (explícito)</td><td>Médio (processos sequencial/hierárquico)</td><td>Alto (LLM agents + workflow agents)</td></tr>
+  <tr><td>Estado / persistência</td><td>Via memória/integrações</td><td>Checkpointers nativos, human-in-the-loop</td><td>Memória de crew</td><td>Session service (memória, banco), state</td></tr>
+  <tr><td>Multi-agente</td><td>Possível</td><td>Supervisor, swarm, subgrafos</td><td>Nativo (é o foco)</td><td>Nativo (sub_agents, AgentTool)</td></tr>
+  <tr><td>Ferramentas de dev</td><td>LangSmith</td><td>LangGraph Studio, LangSmith</td><td>CLI, plataforma</td><td><code>adk web</code>, <code>adk run</code>, eval</td></tr>
+  <tr><td>Modelos</td><td>Vários</td><td>Vários</td><td>Vários</td><td>Gemini nativo; outros via LiteLLM</td></tr>
+</table>
+</div>
+
+<h3>Demonstrações práticas de cada ferramenta</h3>
+<div class="example">
+  <h4>LangGraph — agente ReAct pré-construído com Claude</h4>
+<pre><code># pip install langgraph langchain-anthropic
+from langchain_anthropic import ChatAnthropic
+from langgraph.prebuilt import create_react_agent
+
+def buscar_preco(produto: str) -&gt; str:
+    """Busca o preço atual de um produto no catálogo."""
+    return {"notebook": "R$ 4.500"}.get(produto.lower(), "não encontrado")
+
+agente = create_react_agent(ChatAnthropic(model="claude-opus-5-5"), tools=[buscar_preco])
+saida = agente.invoke({"messages": [("user", "Quanto custa o notebook?")]})
+print(saida["messages"][-1].content)</code></pre>
+</div>
+<div class="example">
+  <h4>CrewAI — equipe com papéis</h4>
+<pre><code># pip install crewai
+from crewai import Agent, Task, Crew
+
+pesquisador = Agent(role="Pesquisador de mercado", goal="Levantar dados confiáveis",
+                    backstory="Analista meticuloso que sempre cita fontes",
+                    llm="anthropic/claude-opus-5-5")
+redator = Agent(role="Redator técnico", goal="Escrever relatórios claros",
+                backstory="Transforma dados em narrativa objetiva",
+                llm="anthropic/claude-opus-5-5")
+
+t1 = Task(description="Pesquise o mercado de bancos vetoriais em 2026",
+          expected_output="Lista de 5 players com prós e contras", agent=pesquisador)
+t2 = Task(description="Escreva um resumo executivo a partir da pesquisa",
+          expected_output="Texto de 300 palavras", agent=redator)
+
+print(Crew(agents=[pesquisador, redator], tasks=[t1, t2]).kickoff())</code></pre>
+</div>
+
+<h3>Escolha do framework baseada em casos de uso</h3>
+<div class="table-wrap">
+<table>
+  <tr><th>Caso de uso</th><th>Sugestão</th></tr>
+  <tr><td>Fluxo com etapas claras, aprovação humana, retomada após falha</td><td>LangGraph</td></tr>
+  <tr><td>Protótipo rápido de "time de especialistas"</td><td>CrewAI</td></tr>
+  <tr><td>Ecossistema Google Cloud / Gemini, deploy em Vertex AI Agent Engine, A2A</td><td>Google ADK</td></tr>
+  <tr><td>Agente de código/arquivos com ferramentas prontas</td><td><a href="https://platform.claude.com/docs/en/agent-sdk/overview">Claude Agent SDK</a></td></tr>
+  <tr><td>Agente hospedado pelo provedor (sem gerir loop nem sandbox)</td><td><a href="https://platform.claude.com/docs/en/managed-agents/overview">Claude Managed Agents</a></td></tr>
+  <tr><td>Controle total e poucas dependências</td><td>SDK do provedor + seu próprio loop</td></tr>
+</table>
+</div>
+
+<!-- ============================================================ -->
+<h2 id="adk-primeiro">Criando seu Primeiro Agente com ADK</h2>
+<h3>Panorama de frameworks e escolha do ADK (Google)</h3>
+<p>O <a href="https://google.github.io/adk-docs/">Agent Development Kit (ADK)</a> é o framework open source do Google para construir, avaliar e implantar agentes. Pontos fortes: estrutura "code-first" clara, interface de desenvolvimento (<code>adk web</code>), multiagente nativo, sessões/estado bem definidos, integração com A2A e Vertex AI. O curso o usa como framework principal pelos conceitos explícitos de runtime.</p>
+<h3>Preparação do ambiente e configuração da Google API</h3>
+<ol>
+  <li>Python 3.10+ e um ambiente virtual.</li>
+  <li>Crie uma chave no Google AI Studio (ou configure Vertex AI no Google Cloud).</li>
+  <li>Guarde a chave num <code>.env</code> (nunca no código).</li>
+</ol>
+<h3>Instalação do Google ADK</h3>
+<pre><code>python -m venv .venv &amp;&amp; source .venv/bin/activate
+pip install google-adk
+
+# estrutura esperada pelo ADK
+meu_agente/
+├── __init__.py      # contém: from . import agent
+├── agent.py         # define root_agent
+└── .env             # GOOGLE_API_KEY=...  e  GOOGLE_GENAI_USE_VERTEXAI=FALSE</code></pre>
+<h3>Criação do primeiro agente com instruções e modelos</h3>
+<div class="example">
+  <h4>Exemplo: agent.py</h4>
+<pre><code>from google.adk.agents import Agent
+
+def consultar_status_pedido(pedido_id: str) -&gt; dict:
+    """Consulta o status de um pedido.
+
+    Args:
+        pedido_id: identificador no formato PED-123.
+    Returns:
+        dict com status ("ok"/"erro") e dados do pedido.
+    """
+    pedidos = {"PED-123": {"status": "ENVIADO", "previsao": "2026-11-20"}}
+    if pedido_id not in pedidos:
+        return {"status": "erro", "mensagem": f"Pedido {pedido_id} não encontrado"}
+    return {"status": "ok", "pedido": pedidos[pedido_id]}
+
+root_agent = Agent(
+    name="atendente_pedidos",
+    model="gemini-2.5-flash",
+    description="Responde dúvidas sobre status de pedidos.",
+    instruction=(
+        "Você é um atendente cordial. Use a ferramenta consultar_status_pedido "
+        "sempre que o cliente mencionar um pedido. Nunca invente status."
+    ),
+    tools=[consultar_status_pedido],
+)</code></pre>
+<pre><code>adk web            # interface de desenvolvimento no navegador
+adk run meu_agente # conversa pelo terminal</code></pre>
+</div>
+<div class="note"><strong>Usando Claude no ADK:</strong> o ADK aceita outros modelos via LiteLLM: <code>from google.adk.models.lite_llm import LiteLlm</code> e <code>model=LiteLlm(model="anthropic/claude-opus-5-5")</code> (com <code>ANTHROPIC_API_KEY</code> no ambiente).</div>
+
+<!-- ============================================================ -->
+<h2 id="tools">Tools: Dando Capacidades ao Agente</h2>
+<h3>O que é uma Tool e como criar uma boa Tool</h3>
+<p>Uma <strong>tool</strong> é uma função que o agente pode chamar. No ADK, funções Python viram tools automaticamente: o nome, a <em>docstring</em> e os tipos dos parâmetros viram a descrição que o modelo lê. Boas práticas (válidas para qualquer framework — ver <a href="https://www.anthropic.com/engineering/writing-tools-for-agents">Writing effective tools for agents</a>):</p>
+<ul>
+  <li>Nome e descrição claros: <em>o que faz</em>, <em>quando usar</em>, formato dos parâmetros.</li>
+  <li>Poucas tools, sem sobreposição; prefira tools de alto nível ("agendar_reuniao") a várias de baixo nível.</li>
+  <li>Retorne dados <strong>concisos e relevantes</strong> (não o JSON inteiro de 500 campos).</li>
+  <li>Erros <strong>acionáveis</strong>: "data deve estar no formato AAAA-MM-DD", não "erro 400".</li>
+  <li>Retornos estruturados com status explícito.</li>
+</ul>
+<h3>Fluxo de invocação de uma Tool</h3>
+<div class="diagram">1. Usuário: "Cadê meu pedido PED-123?"
+2. LLM gera uma function_call: consultar_status_pedido(pedido_id="PED-123")
+3. Runtime executa a função Python
+4. Resultado (function_response) é adicionado ao contexto
+5. LLM gera a resposta final usando o resultado</div>
+<h3>Execução de agentes com ADK Web</h3>
+<p><code>adk web</code> abre uma interface onde você conversa com o agente e inspeciona cada <em>evento</em>: chamadas de ferramentas com argumentos, respostas, mudanças de estado e o trace completo — indispensável para depurar.</p>
+<h3>Aprovação de execução de Tools</h3>
+<p>Ações sensíveis (pagamentos, e-mails, deleções) devem exigir confirmação humana. No ADK isso pode ser feito com <em>callbacks</em> (ex.: <code>before_tool_callback</code>, que inspeciona a chamada e pode bloqueá-la) e, nas versões recentes, com o mecanismo de confirmação de tools. O princípio vale para qualquer framework: o agente <em>propõe</em>, o humano <em>aprova</em>.</p>
+<div class="example">
+  <h4>Exemplo: callback que bloqueia reembolsos acima de um limite</h4>
+<pre><code>def checar_permissao(tool, args, tool_context):
+    if tool.name == "emitir_reembolso" and args.get("valor", 0) &gt; 500:
+        return {"status": "bloqueado",
+                "mensagem": "Reembolsos acima de R$ 500 exigem aprovação de um supervisor."}
+    return None   # None = segue com a execução normal
+
+root_agent = Agent(..., tools=[emitir_reembolso], before_tool_callback=checar_permissao)</code></pre>
+</div>
+
+<!-- ============================================================ -->
+<h2 id="subagentes">Subagentes e Coordenação</h2>
+<h3>Fundamentos e primeiros exemplos de subagentes</h3>
+<p>Em vez de um agente gigante com 30 ferramentas, crie agentes especializados e um coordenador. Cada subagente tem instrução e ferramentas próprias — menos confusão, melhor desempenho.</p>
+<div class="example">
+  <h4>Exemplo: coordenador com subagentes no ADK</h4>
+<pre><code>from google.adk.agents import Agent
+
+financeiro = Agent(name="financeiro", model="gemini-2.5-flash",
+    description="Trata boletos, reembolsos e cobranças.",
+    instruction="Resolva questões financeiras usando as ferramentas.",
+    tools=[segunda_via_boleto, emitir_reembolso])
+
+logistica = Agent(name="logistica", model="gemini-2.5-flash",
+    description="Trata status de entrega, rastreio e trocas.",
+    instruction="Resolva questões de entrega.",
+    tools=[consultar_status_pedido, rastrear])
+
+root_agent = Agent(name="coordenador", model="gemini-2.5-flash",
+    description="Atendimento geral da loja.",
+    instruction="Entenda a necessidade e transfira para o especialista adequado.",
+    sub_agents=[financeiro, logistica])</code></pre>
+</div>
+<h3>Transferência de controle entre agentes (transfer to agent e autoflow)</h3>
+<p>Com <code>sub_agents</code>, o ADK habilita a <strong>delegação dirigida pelo LLM</strong> (AutoFlow): o modelo do coordenador pode chamar <code>transfer_to_agent(agent_name="financeiro")</code> com base nas <code>description</code> dos subagentes — por isso descrições claras são essenciais. A transferência passa o controle da conversa ao subagente. Alternativa: <strong>AgentTool</strong>, que usa um agente como ferramenta (o coordenador chama, recebe o resultado e continua no controle).</p>
+<h3>Coordenação entre agente coordenador e subagentes</h3>
+<ul>
+  <li><strong>Delegação (transfer)</strong>: o especialista assume a conversa.</li>
+  <li><strong>Agente como ferramenta (AgentTool)</strong>: o coordenador mantém o controle e sintetiza.</li>
+  <li><strong>Workflow agents</strong> (determinísticos): <code>SequentialAgent</code> (um após o outro), <code>ParallelAgent</code> (simultâneos), <code>LoopAgent</code> (repete até condição) — combinam bem com LLM agents.</li>
+  <li><strong>Estado compartilhado</strong>: agentes trocam dados via <code>session.state</code> (ex.: <code>output_key</code> grava a saída de um agente no estado para o próximo ler).</li>
+</ul>
+<h3>Modos de agente: chat, single turn e task</h3>
+<div class="table-wrap">
+<table>
+  <tr><th>Modo</th><th>Comportamento</th><th>Exemplo</th></tr>
+  <tr><td><strong>Chat</strong></td><td>Multi-turno, conversa com o usuário, mantém histórico na sessão</td><td>Atendente</td></tr>
+  <tr><td><strong>Single turn</strong></td><td>Uma entrada, uma saída, sem diálogo (função "inteligente")</td><td>Classificador/extrator chamado por outro agente</td></tr>
+  <tr><td><strong>Task</strong></td><td>Recebe um objetivo e trabalha autonomamente até concluir, devolvendo o resultado</td><td>"Gere o relatório mensal de vendas"</td></tr>
+</table>
+</div>
+
+<!-- ============================================================ -->
+<h2 id="runtime">Sessões, Aplicações e Execução (Runtime do ADK)</h2>
+<h3>Arquitetura do runtime do ADK: sessões, apps e runners</h3>
+<ul>
+  <li><strong>Agent</strong>: a lógica (instrução, modelo, ferramentas).</li>
+  <li><strong>App</strong>: identificada por <code>app_name</code>; agrupa agente(s) e configuração.</li>
+  <li><strong>Session</strong>: uma conversa — histórico de <em>eventos</em> + <em>state</em> (dicionário chave/valor) para um <code>user_id</code>.</li>
+  <li><strong>SessionService</strong>: onde as sessões vivem (memória, banco, Vertex AI).</li>
+  <li><strong>Runner</strong>: orquestra a execução — recebe a mensagem, roda o agente, emite eventos, persiste na sessão.</li>
+</ul>
+<h3>Construção de uma aplicação web agêntica</h3>
+<div class="example">
+  <h4>Exemplo: expondo o agente via FastAPI</h4>
+<pre><code>from fastapi import FastAPI
+from google.adk.runners import Runner
+from google.adk.sessions import DatabaseSessionService
+from google.genai import types
+from meu_agente.agent import root_agent
+
+APP = "atendimento"
+sessions = DatabaseSessionService(db_url="sqlite:///./sessoes.db")   # persistência
+runner = Runner(agent=root_agent, app_name=APP, session_service=sessions)
+api = FastAPI()
+
+@api.post("/chat/{user_id}/{session_id}")
+async def chat(user_id: str, session_id: str, texto: str):
+    if not await sessions.get_session(app_name=APP, user_id=user_id, session_id=session_id):
+        await sessions.create_session(app_name=APP, user_id=user_id, session_id=session_id)
+
+    msg = types.Content(role="user", parts=[types.Part(text=texto)])
+    resposta = ""
+    async for evento in runner.run_async(user_id=user_id, session_id=session_id, new_message=msg):
+        if evento.is_final_response() and evento.content:
+            resposta = evento.content.parts[0].text
+    return {"resposta": resposta}</code></pre>
+</div>
+<h3>Padrão assíncrono, generators e event loop</h3>
+<p><code>run_async</code> é um <strong>async generator</strong>: em vez de devolver uma resposta pronta, ele <em>emite eventos</em> à medida que acontecem (chamada de ferramenta, resultado, texto parcial, resposta final). Isso roda no <strong>event loop</strong> do asyncio, permitindo atender muitas sessões concorrentes sem bloquear enquanto espera o LLM ou as ferramentas, e facilita streaming para o frontend (SSE/WebSocket).</p>
+<h3>Persistência de sessão em banco de dados</h3>
+<p><code>InMemorySessionService</code> é só para desenvolvimento (perde tudo ao reiniciar). Em produção use <code>DatabaseSessionService</code> (SQLAlchemy: SQLite, PostgreSQL, MySQL) ou o serviço gerenciado do Vertex AI. Assim o usuário retoma a conversa depois e você tem auditoria.</p>
+<h3>Gerenciamento de estado e output schema</h3>
+<ul>
+  <li><strong>state</strong>: dicionário da sessão. Prefixos definem escopo: sem prefixo (sessão), <code>user:</code> (todas as sessões do usuário), <code>app:</code> (toda a app), <code>temp:</code> (só a invocação atual).</li>
+  <li>Instruções podem interpolar estado: <code>instruction="O cliente prefere {user:idioma}."</code></li>
+  <li><strong>output_schema</strong>: força o agente a responder num formato (modelo Pydantic) — útil para agentes "single turn" em pipelines.</li>
+  <li><strong>output_key</strong>: grava a resposta do agente no estado para o próximo agente.</li>
+</ul>
+<div class="example">
+  <h4>Exemplo: extrator com output_schema</h4>
+<pre><code>from pydantic import BaseModel
+from google.adk.agents import Agent
+
+class Triagem(BaseModel):
+    categoria: str      # financeiro | logistica | outro
+    urgente: bool
+
+triador = Agent(name="triador", model="gemini-2.5-flash",
+    instruction="Classifique a mensagem do cliente.",
+    output_schema=Triagem, output_key="triagem")   # resultado vai para state["triagem"]</code></pre>
+</div>
+
+<!-- ============================================================ -->
+<h2 id="observabilidade">Observabilidade do Agente</h2>
+<h3>Painel do ADK e visualização de execução em tempo real</h3>
+<p>O <code>adk web</code> mostra, para cada turno, a sequência de eventos, a árvore de chamadas entre agentes, argumentos e retornos das ferramentas e o estado da sessão. É o equivalente ao "debugger" do agente.</p>
+<h3>Rastreamento de ações, decisões e uso de ferramentas</h3>
+<p>Em produção, exporte traces via OpenTelemetry (o ADK tem integração; também Cloud Trace, LangSmith, Langfuse, Arize Phoenix). Registre por execução: agente, ferramentas chamadas, latência, tokens, erros, transferências entre agentes.</p>
+<h3>Registro de histórico e refinamento do comportamento</h3>
+<p>Transforme sessões reais em <strong>datasets de avaliação</strong>: conversas que deram errado viram casos de teste. O ADK tem suporte a avaliação (<code>adk eval</code>) com arquivos de casos que verificam trajetória (ferramentas esperadas) e resposta final. Ciclo: observar → identificar falha → ajustar instrução/tool → rodar eval → implantar.</p>
+
+<!-- ============================================================ -->
+<h2 id="recursos">Recursos para aprofundar</h2>
+<div class="resources">
+  <div class="box docs"><h4>📘 Documentação do Claude</h4><ul>
+    <li><a href="https://platform.claude.com/docs/en/agents-and-tools/tool-use/overview">Tool use</a></li>
+    <li><a href="https://platform.claude.com/docs/en/agent-sdk/overview">Claude Agent SDK</a></li>
+    <li><a href="https://platform.claude.com/docs/en/managed-agents/overview">Managed Agents</a></li>
+    <li><a href="https://platform.claude.com/docs/en/agents-and-tools/tool-use/memory-tool">Memory tool</a></li>
+    <li><a href="https://www.anthropic.com/engineering/building-effective-agents">Building effective agents</a></li>
+    <li><a href="https://www.anthropic.com/engineering/writing-tools-for-agents">Writing effective tools for agents</a></li>
+    <li><a href="https://www.anthropic.com/engineering/multi-agent-research-system">Multi-agent research system</a></li>
+  </ul></div>
+  <div class="box docs"><h4>📘 Frameworks</h4><ul>
+    <li><a href="https://google.github.io/adk-docs/">Google ADK docs</a></li>
+    <li><a href="https://langchain-ai.github.io/langgraph/">LangGraph</a> · <a href="https://docs.langchain.com">LangChain</a></li>
+    <li><a href="https://docs.crewai.com">CrewAI</a></li>
+    <li><a href="https://docs.smith.langchain.com">LangSmith</a> (observabilidade/eval)</li>
+  </ul></div>
+  <div class="box videos"><h4>▶️ Vídeos</h4><ul>
+    <li><a href="https://www.youtube.com/@GoogleCloudTech">Google Cloud Tech</a> — tutoriais de ADK</li>
+    <li><a href="https://www.youtube.com/results?search_query=google+ADK+agent+development+kit+tutorial">Buscar: Google ADK tutorial</a></li>
+    <li><a href="https://www.youtube.com/results?search_query=langgraph+tutorial+agents">Buscar: LangGraph agents</a></li>
+    <li><a href="https://www.youtube.com/results?search_query=crewai+tutorial+multi+agent">Buscar: CrewAI multi-agent</a></li>
+    <li><a href="https://www.youtube.com/results?search_query=anthropic+building+effective+agents+talk">Buscar: Building effective agents (talk)</a></li>
+  </ul></div>
+  <div class="box courses"><h4>🎓 Cursos</h4><ul>
+    <li><a href="https://huggingface.co/learn/agents-course">Hugging Face Agents Course</a> (gratuito, com certificado)</li>
+    <li><a href="https://www.deeplearning.ai/short-courses/ai-agents-in-langgraph/">AI Agents in LangGraph</a></li>
+    <li><a href="https://www.deeplearning.ai/short-courses/multi-ai-agent-systems-with-crewai/">Multi AI Agent Systems with crewAI</a></li>
+    <li><a href="https://www.deeplearning.ai/short-courses/evaluating-ai-agents/">Evaluating AI Agents</a></li>
+    <li><a href="https://anthropic.skilljar.com/">Anthropic Academy</a></li>
+  </ul></div>
+</div>
+
+<h2 id="exercicios">Exercícios e quiz</h2>
+<details><summary>Projeto — central de atendimento multiagente</summary>
+<p>Com ADK: coordenador + subagentes financeiro e logística; persistência em SQLite; estado <code>user:nome</code> lembrado entre sessões; reembolso acima de R$ 500 bloqueado por callback; um agente triador com <code>output_schema</code>. Crie 10 casos de avaliação e rode <code>adk eval</code>. Bônus: troque o modelo de um subagente para Claude via LiteLLM e compare.</p></details>
+
+<div class="quiz" data-answer="b">
+  <div class="q">1. No ADK, o que o coordenador usa para decidir para qual subagente transferir?</div>
+  <button class="opt" data-opt="a">A ordem da lista sub_agents</button>
+  <button class="opt" data-opt="b">As descriptions dos subagentes, interpretadas pelo LLM</button>
+  <button class="opt" data-opt="c">Um sorteio</button>
+  <button class="opt" data-opt="d">O nome do arquivo Python</button>
+  <div class="explain">A delegação é dirigida pelo LLM com base nas descrições — escreva-as com cuidado.</div>
+</div>
+<div class="quiz" data-answer="d">
+  <div class="q">2. Para que serve o Runner?</div>
+  <button class="opt" data-opt="a">Definir as instruções do agente</button>
+  <button class="opt" data-opt="b">Armazenar embeddings</button>
+  <button class="opt" data-opt="c">Treinar o modelo</button>
+  <button class="opt" data-opt="d">Orquestrar a execução: receber mensagens, rodar o agente, emitir eventos e persistir na sessão</button>
+  <div class="explain">Agent = lógica; SessionService = armazenamento; Runner = execução.</div>
+</div>
+<div class="quiz" data-answer="c">
+  <div class="q">3. Um fluxo fixo "extrair → validar → salvar" sem decisões abertas deve ser…</div>
+  <button class="opt" data-opt="a">Um agente autônomo com todas as ferramentas</button>
+  <button class="opt" data-opt="b">Uma crew com 3 papéis</button>
+  <button class="opt" data-opt="c">Um workflow (ex.: SequentialAgent ou código), não um agente autônomo</button>
+  <button class="opt" data-opt="d">Um loop infinito</button>
+  <div class="explain">Se os passos são conhecidos, workflow é mais barato, rápido e previsível.</div>
+</div>
+
+</article>
+</main>
+</body>
+</html>

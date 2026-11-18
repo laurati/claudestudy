@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>05 · Desenvolvimento de Software com IA — ClaudeStudy</title>
+<link rel="stylesheet" href="../css/style.css">
+<script src="../js/site.js" defer></script>
+</head>
+<body data-root="..">
+<main>
+<article class="content">
+
+<span class="kicker">Disciplina 05</span>
+<h1>Desenvolvimento de Software com IA</h1>
+<p class="lead">Usar IA para escrever código é fácil. Difícil é fazê-la escrever <em>o que você realmente precisa</em>. O segredo está em preparar ambiente, contexto e prompts.</p>
+
+<div class="objectives">
+  <h4>Ao finalizar esta disciplina você será capaz de:</h4>
+  <ul>
+    <li>Estruturar um fluxo de desenvolvimento IA-driven</li>
+    <li>Reduzir erros com geração automatizada de testes e refatorações</li>
+    <li>Usar IA para debugging, análise de logs e identificação de falhas</li>
+    <li>Criar rules, contextos e memories que guiam a IA com precisão</li>
+    <li>Integrar ferramentas como Cursor, Copilot e servidores MCP no seu dia a dia</li>
+  </ul>
+</div>
+
+<!-- ============================================================ -->
+<h2 id="fundamentos">Fundamentos do desenvolvimento IA-driven</h2>
+<p>No desenvolvimento <strong>IA-driven</strong>, a IA deixa de ser um "autocomplete esperto" e passa a ser um par de programação que lê o projeto, executa comandos, roda testes e propõe mudanças. O dev assume o papel de <em>tech lead</em> do agente.</p>
+<h3>Os três modos de uso</h3>
+<div class="table-wrap">
+<table>
+  <tr><th>Modo</th><th>Exemplo</th><th>Quando</th></tr>
+  <tr><td>Autocomplete (inline)</td><td>Sugestões enquanto digita (Tab)</td><td>Código repetitivo, boilerplate</td></tr>
+  <tr><td>Chat / edição guiada</td><td>"Explique esta função", "refatore este trecho"</td><td>Dúvidas, mudanças localizadas</td></tr>
+  <tr><td>Agente</td><td>"Implemente a feature X e rode os testes"</td><td>Tarefas multi-arquivo (Disciplina 06)</td></tr>
+</table>
+</div>
+<h3>O ciclo básico: Explorar → Planejar → Implementar → Verificar</h3>
+<ol>
+  <li><strong>Explorar:</strong> peça para a IA ler os arquivos relevantes e explicar o que existe — <em>sem</em> escrever código ainda.</li>
+  <li><strong>Planejar:</strong> peça um plano com os arquivos a alterar e os testes; revise e corrija o plano.</li>
+  <li><strong>Implementar:</strong> em passos pequenos.</li>
+  <li><strong>Verificar:</strong> testes, lint, tipos, revisão do diff. Só então commit.</li>
+</ol>
+<div class="tip">A documentação do Claude Code descreve exatamente esse fluxo em <a href="https://code.claude.com/docs/en/best-practices">Best practices</a> e <a href="https://code.claude.com/docs/en/common-workflows">Common workflows</a>. O ponto central: <strong>dê à IA uma forma de verificar o próprio trabalho</strong> (testes, screenshots, comandos).</div>
+
+<!-- ============================================================ -->
+<h2 id="novas-vs-existentes">Novas aplicações × aplicações existentes</h2>
+<div class="table-wrap">
+<table>
+  <tr><th></th><th>Novas (greenfield)</th><th>Existentes (brownfield/legado)</th></tr>
+  <tr><td>Desafio</td><td>Decisões demais, nenhum padrão ainda</td><td>Padrões implícitos, dívida técnica, pouco teste</td></tr>
+  <tr><td>Papel da IA</td><td>Scaffolding rápido, propor estrutura</td><td>Entender o código, mapear dependências, refatorar com segurança</td></tr>
+  <tr><td>Primeiro passo</td><td>PRD + decisões de stack + guidelines desde o dia 1</td><td>Pedir à IA um "tour" do código e gerar o arquivo de contexto (CLAUDE.md)</td></tr>
+  <tr><td>Risco</td><td>IA escolher bibliotecas/padrões aleatórios</td><td>IA ignorar convenções e "reinventar" utilitários existentes</td></tr>
+  <tr><td>Antídoto</td><td>Especificar stack e estrutura explicitamente</td><td>Testes de caracterização + rules apontando exemplos a seguir</td></tr>
+</table>
+</div>
+<div class="example">
+  <h4>Exemplo: "onboarding" da IA num projeto existente</h4>
+<pre class="plain"><code>Você está entrando neste projeto agora. Sem alterar nada:
+1. Explique a arquitetura em alto nível (módulos, fluxo de uma requisição).
+2. Liste comandos de build, teste e lint (encontre-os nos arquivos de config).
+3. Identifique convenções: tratamento de erro, logs, injeção de dependência, testes.
+4. Aponte 3 arquivos que são bons exemplos de "como fazemos aqui".
+Ao final, proponha o conteúdo de um CLAUDE.md com essas informações.</code></pre>
+</div>
+<p>No Claude Code, o comando <code>/init</code> faz uma versão automática disso e cria o <code>CLAUDE.md</code> inicial.</p>
+
+<!-- ============================================================ -->
+<h2 id="ferramentas">Comparativo entre ferramentas: Cursor, Windsurf e GitHub Copilot</h2>
+<div class="table-wrap">
+<table>
+  <tr><th></th><th>Cursor</th><th>Windsurf</th><th>GitHub Copilot</th><th>Claude Code</th></tr>
+  <tr><td>Forma</td><td>IDE (fork do VS Code)</td><td>IDE (fork do VS Code) + plugins</td><td>Extensão para VS Code, JetBrains, etc. + agente no GitHub</td><td>CLI no terminal + extensões de IDE, desktop e web</td></tr>
+  <tr><td>Contexto do projeto</td><td>Indexação do código, <code>.cursor/rules</code></td><td>Indexação, rules e memories</td><td><code>.github/copilot-instructions.md</code>, instruções por caminho</td><td><code>CLAUDE.md</code> hierárquico, skills, subagentes</td></tr>
+  <tr><td>Modo agente</td><td>Agent / background agents</td><td>Cascade</td><td>Agent mode + coding agent (abre PRs)</td><td>Agente nativo (lê, edita, roda comandos)</td></tr>
+  <tr><td>MCP</td><td>Sim</td><td>Sim</td><td>Sim</td><td>Sim</td></tr>
+  <tr><td>Modelos</td><td>Vários provedores</td><td>Vários provedores</td><td>Vários provedores</td><td>Claude</td></tr>
+  <tr><td>Ponto forte</td><td>Experiência de edição + agente na IDE</td><td>Fluxo agêntico integrado</td><td>Integração com GitHub e empresas</td><td>Terminal/automação (headless, CI), extensibilidade (hooks, plugins)</td></tr>
+</table>
+</div>
+<div class="note">Recursos mudam a cada mês. Avalie as ferramentas com uma <strong>tarefa real do seu projeto</strong> (ex.: "adicionar endpoint com testes"), medindo tempo, número de correções e qualidade do diff — não com demos.</div>
+
+<!-- ============================================================ -->
+<h2 id="biblioteca-prompts">Biblioteca de prompts para desenvolvimento</h2>
+<p>Transforme os prompts que funcionam em <strong>comandos reutilizáveis</strong>. No Claude Code, arquivos Markdown em <code>.claude/commands/</code> (ou skills em <code>.claude/skills/</code>) viram comandos <code>/nome</code>; no Cursor, rules acionadas manualmente; no Copilot, <em>prompt files</em>.</p>
+<div class="example">
+  <h4>Exemplo: comando /novo-endpoint (Claude Code)</h4>
+<pre><code>&lt;!-- .claude/commands/novo-endpoint.md --&gt;
+---
+description: Cria endpoint REST seguindo os padrões do projeto
+argument-hint: [recurso] [verbo]
+---
+Crie o endpoint $ARGUMENTS.
+1. Siga o padrão de src/orders/ (controller → service → repository).
+2. Valide a entrada com o DTO + class-validator.
+3. Escreva testes unitários do service e um teste e2e do endpoint.
+4. Atualize docs/openapi.yaml.
+5. Rode `npm test` e `npm run lint` e corrija até passar.</code></pre>
+</div>
+<p>Categorias para sua biblioteca: explicar código, gerar testes, revisar PR, refatorar, debugar, gerar migração, documentar, escrever commit/PR, investigar incidente.</p>
+
+<!-- ============================================================ -->
+<h2 id="documentacao-contexto">Estruturação de documentação para contexto</h2>
+<p>O agente começa cada sessão "do zero". A documentação de contexto diz a ele o essencial do projeto. Hierarquia recomendada:</p>
+<div class="diagram">~/.claude/CLAUDE.md          ← preferências pessoais (todas as sessões)
+repo/CLAUDE.md               ← visão geral, comandos, convenções (versionado, do time)
+repo/src/payments/CLAUDE.md  ← regras específicas daquele módulo (carregado quando relevante)
+repo/docs/                   ← PRDs, ADRs, FDDs (referenciados, lidos sob demanda)</div>
+<div class="example">
+  <h4>Exemplo: CLAUDE.md enxuto e eficaz</h4>
+<pre><code># Projeto: API de Pedidos
+
+## Comandos
+- `make dev` sobe API + Postgres (docker compose)
+- `make test` roda testes; `make test-one T=TestNome` roda um teste
+- `make lint` deve passar antes de qualquer commit
+
+## Arquitetura
+- Hexagonal: domain/ (puro, sem I/O) → app/ (casos de uso) → adapters/ (http, db, llm)
+- Decisões em docs/adr/ — respeite os ADRs com status accepted
+
+## Convenções
+- Erros: retorne `apperr.New(code, msg)`; nunca `panic` fora de main
+- Logs estruturados com slog; nunca logue dados de cartão ou CPF
+- Testes table-driven; mocks só para adapters
+
+## Cuidado
+- Migrações em db/migrations são imutáveis depois de mergeadas: crie uma nova
+- Não altere arquivos em gen/ (gerados por `make gen`)</code></pre>
+</div>
+<div class="tip"><strong>Menos é mais:</strong> cada linha do CLAUDE.md custa contexto em todas as sessões. Inclua só o que o agente erraria sem saber. Veja <a href="https://code.claude.com/docs/en/memory">Manage Claude's memory</a>.</div>
+
+<!-- ============================================================ -->
+<h2 id="rules-memories">Geração de Rules e Memories</h2>
+<p><strong>Rules</strong> são instruções persistentes (geralmente escritas por você) que se aplicam a todo o projeto ou a um conjunto de arquivos. <strong>Memories</strong> são fatos que a ferramenta lembra entre sessões (alguns aprendidos automaticamente a partir das suas correções).</p>
+<div class="example">
+  <h4>Exemplo: rule do Cursor com escopo por arquivos</h4>
+<pre><code>---
+description: Padrões para componentes React
+globs: ["src/components/**/*.tsx"]
+alwaysApply: false
+---
+- Componentes funcionais com props tipadas (interface XxxProps)
+- Estilo com Tailwind; não criar arquivos .css
+- Estados de loading/erro sempre tratados
+- Exemplo de referência: src/components/OrderCard.tsx</code></pre>
+</div>
+<div class="example">
+  <h4>Exemplo: instruções do Copilot</h4>
+<pre><code>&lt;!-- .github/copilot-instructions.md --&gt;
+Este repositório usa Go 1.23, chi para HTTP e sqlc para acesso a dados.
+Ao gerar SQL, edite db/queries/*.sql e rode `make gen`; nunca escreva SQL inline.
+Testes devem usar testcontainers para Postgres.</code></pre>
+</div>
+<h3>Gerando rules com a própria IA</h3>
+<pre class="plain"><code>Revise os últimos 20 PRs mergeados e os comentários de code review.
+Extraia as regras implícitas que os revisores cobram repetidamente
+e escreva-as como rules concisas (uma linha cada, com o porquê).
+Ignore o que o linter já garante.</code></pre>
+<div class="note">No Claude Code você pode adicionar memórias rapidamente durante a sessão (ex.: pedindo "lembre que…" ou editando com <code>/memory</code>). Revise periodicamente: regras contraditórias confundem o agente.</div>
+
+<!-- ============================================================ -->
+<h2 id="testes">Testes automatizados e detecção de Edge Cases</h2>
+<p>A IA é muito boa em <strong>enumerar casos de borda</strong> que esquecemos. Use-a em duas etapas: primeiro listar casos, depois escrever testes.</p>
+<div class="example">
+  <h4>Exemplo: descoberta de edge cases</h4>
+<pre class="plain"><code>Para a função calcularFrete(cep, pesoKg, itens) liste casos de borda agrupados em:
+entradas inválidas, limites numéricos, formatos (CEP com/sem hífen),
+regras de negócio (frete grátis, regiões remotas), concorrência/tempo,
+falhas de dependências (API dos Correios fora do ar).
+Para cada caso: entrada, comportamento esperado e se já é coberto pelos testes atuais.</code></pre>
+</div>
+<ul>
+  <li><strong>Property-based testing</strong> (Hypothesis, fast-check): peça à IA para propor <em>propriedades</em> ("o frete nunca é negativo", "ordenar duas vezes = ordenar uma vez").</li>
+  <li><strong>Mutation testing</strong> (Stryker, mutmut): mede se seus testes detectam bugs plantados — ótimo para avaliar testes gerados por IA.</li>
+  <li><strong>Cuidado</strong>: a IA pode escrever testes que validam o comportamento <em>atual</em> (inclusive bugs) ou que "passam por construção". Revise as asserções.</li>
+</ul>
+
+<!-- ============================================================ -->
+<h2 id="mcp-dev">Servidores MCP para desenvolvimento e Docker Catalog</h2>
+<p>Servidores <a href="https://modelcontextprotocol.io">MCP</a> dão ao assistente acesso a ferramentas e dados externos: banco de dados, GitHub, navegador (Playwright), documentação atualizada (Context7), Figma, Sentry, Jira…</p>
+<div class="example">
+  <h4>Exemplo: adicionando servidores MCP no Claude Code</h4>
+<pre><code># servidor local via stdio (npx)
+claude mcp add playwright -- npx @playwright/mcp@latest
+
+# servidor remoto via HTTP
+claude mcp add --transport http context7 https://mcp.context7.com/mcp
+
+# listar / verificar
+claude mcp list</code></pre>
+<pre><code>// .mcp.json (escopo de projeto, versionado para o time)
+{
+  "mcpServers": {
+    "postgres": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-postgres", "postgresql://readonly@localhost/app"]
+    }
+  }
+}</code></pre>
+</div>
+<h3>Docker MCP Catalog e Toolkit</h3>
+<p>O <a href="https://docs.docker.com/ai/mcp-catalog-and-toolkit/">Docker MCP Catalog</a> reúne servidores MCP empacotados como imagens verificadas; o <strong>MCP Toolkit</strong> do Docker Desktop permite ativá-los com um clique, isolados em containers, gerenciar segredos e conectá-los a clientes (Claude, Cursor, VS Code) por meio de um gateway único.</p>
+<div class="warning"><strong>Segurança:</strong> um servidor MCP executa código e pode expor dados. Use servidores de fontes confiáveis, credenciais de <em>somente leitura</em> quando possível, e lembre que conteúdo trazido por MCP (issues, páginas) pode conter prompt injection.</div>
+
+<!-- ============================================================ -->
+<h2 id="debugging">Processos de debugging otimizados</h2>
+<p>Debugging com IA funciona quando você fornece <strong>evidência</strong> e exige <strong>método</strong>:</p>
+<ol>
+  <li>Reproduza o bug (idealmente com um teste que falha).</li>
+  <li>Forneça: mensagem de erro completa, stack trace, entrada que causa o problema, o que mudou recentemente (<code>git log</code>/<code>git diff</code>).</li>
+  <li>Peça <strong>hipóteses ranqueadas</strong> e como testar cada uma, antes de qualquer correção.</li>
+  <li>Corrija a causa raiz, não o sintoma; mantenha o teste como regressão.</li>
+</ol>
+<div class="example">
+  <h4>Exemplo: prompt de debugging</h4>
+<pre class="plain"><code>O teste TestCheckout_Concurrent falha ~1 em 10 execuções com:
+&lt;erro&gt;duplicate key value violates unique constraint "payments_order_id_key"&lt;/erro&gt;
+1. Leia checkout/service.go e payments/repo.go.
+2. Liste até 3 hipóteses para a falha intermitente, da mais à menos provável.
+3. Para cada uma, proponha um experimento (log, teste) que a confirme ou descarte.
+4. Só depois de confirmar, proponha a correção mínima.</code></pre>
+</div>
+<div class="tip"><strong><code>git bisect</code> + IA:</strong> para regressões, peça à IA que escreva o script de teste usado no <code>git bisect run</code> — encontra o commit culpado automaticamente.</div>
+
+<!-- ============================================================ -->
+<h2 id="refactoring">Boas práticas de Refactoring</h2>
+<ul>
+  <li><strong>Testes primeiro:</strong> sem rede de proteção, não há refatoração — só "reescrita com fé".</li>
+  <li><strong>Passos pequenos e commits frequentes:</strong> facilita revisar e reverter. Peça explicitamente "um passo por vez".</li>
+  <li><strong>Separe refatoração de mudança de comportamento</strong> (PRs diferentes).</li>
+  <li><strong>Diga o padrão alvo</strong> com exemplo ("transforme no formato de <code>src/orders/service.ts</code>").</li>
+  <li><strong>Refatorações em massa</strong>: prefira ferramentas determinísticas (codemods, LSP rename, OpenRewrite) e use a IA para escrever o codemod ou tratar os casos que a ferramenta não cobre.</li>
+  <li><strong>Checkpoints:</strong> ferramentas como o Claude Code permitem voltar ao estado anterior de uma edição (<a href="https://code.claude.com/docs/en/checkpointing">checkpointing</a>) — mas o Git continua sendo seu checkpoint principal.</li>
+</ul>
+
+<!-- ============================================================ -->
+<h2 id="logs">Análise automatizada de logs e debugging</h2>
+<p>LLMs são ótimos para encontrar padrões em grandes volumes de logs, correlacionar eventos e resumir. Cuidados: logs podem conter dados sensíveis (mascare antes) e podem ser enormes (filtre/agregue antes de enviar).</p>
+<div class="example">
+  <h4>Exemplo: pipeline de logs para o Claude Code em modo não interativo</h4>
+<pre><code># últimos erros do serviço, agregados, enviados ao agente (modo headless -p)
+kubectl logs deploy/checkout --since=1h \
+  | grep -E "ERROR|WARN" \
+  | sed -E 's/[0-9]{3}\.[0-9]{3}\.[0-9]{3}-[0-9]{2}/***CPF***/g' \
+  | sort | uniq -c | sort -rn | head -200 \
+  | claude -p "Agrupe estes erros por causa provável, estime o impacto e sugira o próximo passo de investigação para cada grupo."</code></pre>
+</div>
+<p>Ver <a href="https://code.claude.com/docs/en/headless">modo headless do Claude Code</a>. Em produção, ferramentas de observabilidade já trazem assistentes de IA para consultas em linguagem natural (Disciplina 10).</p>
+
+<!-- ============================================================ -->
+<h2 id="vulnerabilidades">Verificação de vulnerabilidades</h2>
+<p>Código gerado por IA pode introduzir vulnerabilidades clássicas (SQL injection, segredos hardcoded, validação ausente) e dependências inexistentes ou maliciosas ("slopsquatting": a IA sugere um pacote que não existe e alguém o registra). Defesa em camadas:</p>
+<div class="table-wrap">
+<table>
+  <tr><th>Camada</th><th>Ferramentas</th></tr>
+  <tr><td>SAST (código)</td><td>Semgrep, CodeQL, SonarQube</td></tr>
+  <tr><td>Dependências (SCA)</td><td>Dependabot, Renovate, <code>npm audit</code>, <code>govulncheck</code>, Trivy, OSV-Scanner</td></tr>
+  <tr><td>Segredos</td><td>gitleaks, trufflehog, push protection do GitHub</td></tr>
+  <tr><td>Revisão assistida</td><td>Comando <code>/security-review</code> do Claude Code; prompts de revisão focados em OWASP</td></tr>
+  <tr><td>Containers/IaC</td><td>Trivy, Checkov</td></tr>
+</table>
+</div>
+<div class="example">
+  <h4>Exemplo: prompt de revisão de segurança</h4>
+<pre class="plain"><code>Revise o diff com foco exclusivo em segurança (OWASP Top 10):
+injeção, authn/authz, exposição de dados, SSRF, desserialização, segredos.
+Para cada achado: severidade, linha, cenário de exploração concreto e correção.
+Não reporte achados teóricos sem caminho de exploração plausível.
+Verifique também se todas as dependências novas existem e são as oficiais.</code></pre>
+</div>
+
+<!-- ============================================================ -->
+<h2 id="recursos">Recursos para aprofundar</h2>
+<div class="resources">
+  <div class="box docs"><h4>📘 Documentação do Claude Code</h4><ul>
+    <li><a href="https://code.claude.com/docs/en/overview">Overview</a> · <a href="https://code.claude.com/docs/en/quickstart">Quickstart</a></li>
+    <li><a href="https://code.claude.com/docs/en/best-practices">Best practices</a></li>
+    <li><a href="https://code.claude.com/docs/en/common-workflows">Common workflows</a></li>
+    <li><a href="https://code.claude.com/docs/en/memory">Memory (CLAUDE.md)</a></li>
+    <li><a href="https://code.claude.com/docs/en/mcp">MCP</a></li>
+    <li><a href="https://code.claude.com/docs/en/slash-commands">Slash commands</a> · <a href="https://code.claude.com/docs/en/settings">Settings</a></li>
+    <li><a href="https://code.claude.com/docs/en/security">Security</a> · <a href="https://code.claude.com/docs/en/vs-code">VS Code</a></li>
+  </ul></div>
+  <div class="box docs"><h4>📘 Outras ferramentas</h4><ul>
+    <li><a href="https://docs.cursor.com">Cursor docs</a> (rules, agent, MCP)</li>
+    <li><a href="https://docs.windsurf.com">Windsurf docs</a></li>
+    <li><a href="https://docs.github.com/copilot">GitHub Copilot docs</a></li>
+    <li><a href="https://docs.docker.com/ai/mcp-catalog-and-toolkit/">Docker MCP Catalog &amp; Toolkit</a></li>
+    <li><a href="https://github.com/upstash/context7">Context7 MCP</a></li>
+  </ul></div>
+  <div class="box videos"><h4>▶️ Vídeos</h4><ul>
+    <li><a href="https://www.youtube.com/@anthropic-ai">Anthropic</a> — demos e talks sobre Claude Code</li>
+    <li><a href="https://www.youtube.com/results?search_query=claude+code+best+practices+workflow">Buscar: Claude Code best practices</a></li>
+    <li><a href="https://www.youtube.com/results?search_query=cursor+rules+tutorial">Buscar: Cursor rules tutorial</a></li>
+    <li><a href="https://www.youtube.com/results?search_query=github+copilot+agent+mode+tutorial">Buscar: Copilot agent mode</a></li>
+    <li><a href="https://www.youtube.com/results?search_query=docker+mcp+toolkit+catalog">Buscar: Docker MCP Toolkit</a></li>
+  </ul></div>
+  <div class="box courses"><h4>🎓 Cursos</h4><ul>
+    <li><a href="https://anthropic.skilljar.com/">Anthropic Academy — Claude Code in Action</a></li>
+    <li><a href="https://www.deeplearning.ai/short-courses/claude-code-a-highly-agentic-coding-assistant/">Claude Code: A Highly Agentic Coding Assistant</a> — DeepLearning.AI</li>
+    <li><a href="https://www.anthropic.com/engineering/claude-code-best-practices">Artigo: Claude Code best practices</a></li>
+  </ul></div>
+</div>
+
+<h2 id="exercicios">Exercícios e quiz</h2>
+<details><summary>Exercício — prepare um repositório seu para IA</summary>
+<ol>
+  <li>Rode <code>/init</code> (Claude Code) ou peça o "onboarding" e revise o CLAUDE.md gerado, cortando o supérfluo.</li>
+  <li>Crie 3 comandos reutilizáveis (teste, review, novo endpoint).</li>
+  <li>Configure 1 servidor MCP útil (banco somente leitura ou Context7).</li>
+  <li>Implemente uma feature pequena com o ciclo explorar → planejar → implementar → verificar e compare com o tempo habitual.</li>
+</ol></details>
+
+<div class="quiz" data-answer="c">
+  <div class="q">1. Qual o fator mais importante para a IA acertar em tarefas de código?</div>
+  <button class="opt" data-opt="a">Usar sempre o modo agente</button>
+  <button class="opt" data-opt="b">Prompts muito longos</button>
+  <button class="opt" data-opt="c">Dar uma forma de verificar o trabalho (testes, lint, comandos) e contexto relevante</button>
+  <button class="opt" data-opt="d">Desativar o autocomplete</button>
+  <div class="explain">Com verificação, o agente itera até acertar; sem ela, você vira o "testador manual".</div>
+</div>
+<div class="quiz" data-answer="b">
+  <div class="q">2. O que NÃO deveria ir para o CLAUDE.md?</div>
+  <button class="opt" data-opt="a">Comando para rodar um único teste</button>
+  <button class="opt" data-opt="b">Regras de formatação que o linter já aplica automaticamente</button>
+  <button class="opt" data-opt="c">Aviso de que migrações mergeadas são imutáveis</button>
+  <button class="opt" data-opt="d">Onde ficam os ADRs</button>
+  <div class="explain">O que uma ferramenta determinística garante não precisa consumir contexto.</div>
+</div>
+
+</article>
+</main>
+</body>
+</html>

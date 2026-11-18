@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Glossário — ClaudeStudy</title>
+<link rel="stylesheet" href="../css/style.css">
+<script src="../js/site.js" defer></script>
+<style>
+  dl.gloss dt { font-weight: 700; margin-top: 14px; }
+  dl.gloss dd { margin: 2px 0 0 0; padding-left: 14px; border-left: 3px solid var(--accent); }
+  #filtro { width: 100%; max-width: 420px; padding: 9px 12px; font-size: 16px; border: 1px solid var(--border); border-radius: 6px; background: var(--card-bg); color: var(--text); }
+</style>
+</head>
+<body data-root="..">
+<main>
+<article class="content">
+
+<span class="kicker">Referência</span>
+<h1>Glossário</h1>
+<p class="lead">Os termos mais usados no MBA, em ordem alfabética, com link para a disciplina onde são explicados em detalhe.</p>
+<input id="filtro" type="search" placeholder="Filtrar termos… (ex.: cache, agente)">
+
+<h2 id="termos">Termos</h2>
+<dl class="gloss" id="lista">
+  <dt>A2A (Agent2Agent)</dt><dd>Protocolo aberto para comunicação entre agentes de fornecedores/frameworks diferentes, com Agent Cards, Tasks, Messages e Artifacts. → <a href="d09-protocolos.html#a2a-fundamentos">09</a></dd>
+  <dt>ADK (Agent Development Kit)</dt><dd>Framework open source do Google para construir, avaliar e implantar agentes. → <a href="d08-agentes.html#adk-primeiro">08</a></dd>
+  <dt>ADR (Architecture Decision Record)</dt><dd>Registro curto e imutável de uma decisão arquitetural, com contexto e consequências. → <a href="d04-design-docs.html#adr">04</a></dd>
+  <dt>Agent Card</dt><dd>Documento JSON que descreve um agente A2A (skills, URL, autenticação), geralmente em <code>/.well-known/agent.json</code>. → <a href="d09-protocolos.html#a2a-descoberta">09</a></dd>
+  <dt>Agente</dt><dd>Sistema em que um LLM decide dinamicamente quais ferramentas usar e quais passos seguir até cumprir um objetivo. → <a href="d08-agentes.html#fundamentos">08</a></dd>
+  <dt>AI Gateway</dt><dd>Proxy entre aplicações e provedores de LLM que centraliza roteamento, fallback, custos, limites e logs (ex.: LiteLLM). → <a href="d03-arquitetura-era-ia.html#gateways">03</a></dd>
+  <dt>Alucinação</dt><dd>Saída plausível porém falsa gerada por um modelo. → <a href="d01-fundamentos-ia-generativa.html#alucinacao">01</a></dd>
+  <dt>Artifact (A2A)</dt><dd>Produto gerado por uma task A2A (documento, JSON, imagem). → <a href="d09-protocolos.html#a2a-conceitos">09</a></dd>
+  <dt>Batch API</dt><dd>Processamento assíncrono de muitas requisições com desconto, sem latência garantida. → <a href="d02-prompt-engineering.html#contexto">02</a></dd>
+  <dt>C4 Model</dt><dd>Modelo de diagramas de arquitetura em quatro níveis: Context, Containers, Components, Code. → <a href="d04-design-docs.html#diagramas">04</a></dd>
+  <dt>Chain of Thought (CoT)</dt><dd>Técnica de pedir raciocínio passo a passo antes da resposta. → <a href="d02-prompt-engineering.html#tecnicas">02</a></dd>
+  <dt>CLAUDE.md</dt><dd>Arquivo de memória/instruções do projeto carregado automaticamente pelo Claude Code. → <a href="d05-dev-software-ia.html#documentacao-contexto">05</a></dd>
+  <dt>Compaction</dt><dd>Resumo automático do histórico quando a conversa se aproxima do limite de contexto. → <a href="d02-prompt-engineering.html#contexto">02</a></dd>
+  <dt>Context engineering</dt><dd>Disciplina de decidir todo o conjunto de tokens que o modelo vê a cada passo (instruções, ferramentas, documentos, histórico, memória). → <a href="d03-arquitetura-era-ia.html#context-engineering">03</a></dd>
+  <dt>Context window (janela de contexto)</dt><dd>Máximo de tokens que o modelo processa de uma vez (entrada + saída). → <a href="d01-fundamentos-ia-generativa.html#geracao">01</a></dd>
+  <dt>Context anxiety</dt><dd>Tendência do agente a apressar a conclusão quando o contexto está quase cheio. → <a href="d06-modo-agente.html#harness">06</a></dd>
+  <dt>Decoder-only</dt><dd>Arquitetura Transformer que gera texto da esquerda para a direita (Claude, GPT, LLaMA). → <a href="d01-fundamentos-ia-generativa.html#arquiteturas">01</a></dd>
+  <dt>DevSecOps</dt><dd>Integração de segurança em todo o ciclo de desenvolvimento e entrega. → <a href="d10-devops-sre.html#devsecops">10</a></dd>
+  <dt>Effort</dt><dd>Parâmetro da API do Claude que controla o quanto o modelo raciocina e gasta de tokens. → <a href="d01-fundamentos-ia-generativa.html#geracao">01</a></dd>
+  <dt>Embedding</dt><dd>Vetor numérico que representa o significado de um texto; textos parecidos têm vetores próximos. → <a href="d01-fundamentos-ia-generativa.html#embeddings">01</a></dd>
+  <dt>Error budget</dt><dd>Margem de falha permitida por um SLO (100% − SLO). → <a href="d10-devops-sre.html#fundamentos">10</a></dd>
+  <dt>Eval (avaliação)</dt><dd>Conjunto de casos + avaliadores para medir a qualidade de um prompt, modelo ou agente. → <a href="d02-prompt-engineering.html#evaluation">02</a></dd>
+  <dt>Few-shot</dt><dd>Incluir exemplos de entrada→saída no prompt. → <a href="d02-prompt-engineering.html#tecnicas">02</a></dd>
+  <dt>Fine-tuning</dt><dd>Continuar o treinamento de um modelo com dados próprios. → <a href="d01-fundamentos-ia-generativa.html#estrategias">01</a></dd>
+  <dt>Guardrails</dt><dd>Verificações ao redor do modelo (entrada, saída, ações) para segurança e qualidade. → <a href="d03-arquitetura-era-ia.html#seguranca">03</a></dd>
+  <dt>Harness</dt><dd>Tudo ao redor do modelo que o torna um agente: loop, ferramentas, contexto, permissões, hooks, verificação. → <a href="d06-modo-agente.html#harness">06</a></dd>
+  <dt>Hook</dt><dd>Comando executado automaticamente em eventos do agente (antes/depois de uma ferramenta, ao terminar). → <a href="d06-modo-agente.html#principios">06</a></dd>
+  <dt>HyDE</dt><dd>Hypothetical Document Embeddings: buscar usando o embedding de uma resposta hipotética. → <a href="d02-prompt-engineering.html#query-reformulation">02</a></dd>
+  <dt>Instabilidade (I)</dt><dd>Métrica de acoplamento: Ce / (Ca + Ce). → <a href="d03-arquitetura-era-ia.html#acoplamento">03</a></dd>
+  <dt>LLM</dt><dd>Large Language Model: rede neural treinada para prever o próximo token em grande escala. → <a href="d01-fundamentos-ia-generativa.html#llms">01</a></dd>
+  <dt>LLM-as-judge</dt><dd>Usar um modelo para avaliar saídas de outro segundo uma rubrica. → <a href="d02-prompt-engineering.html#evaluation-comparativa">02</a></dd>
+  <dt>Main Sequence</dt><dd>Linha A + I = 1 que representa equilíbrio entre abstração e estabilidade de um módulo. → <a href="d03-arquitetura-era-ia.html#acoplamento">03</a></dd>
+  <dt>MCP (Model Context Protocol)</dt><dd>Protocolo aberto que conecta aplicações de IA a ferramentas e dados (tools, resources, prompts). → <a href="d09-protocolos.html#mcp-fundamentos">09</a></dd>
+  <dt>Mermaid</dt><dd>Linguagem de texto que gera diagramas (fluxo, sequência, classes, ER, estados). → <a href="d04-design-docs.html#diagramas">04</a></dd>
+  <dt>OWASP Top 10 LLM</dt><dd>Lista dos 10 principais riscos de segurança em aplicações com LLM. → <a href="d03-arquitetura-era-ia.html#seguranca">03</a></dd>
+  <dt>PRD</dt><dd>Product Requirements Document: problema, objetivos, requisitos e métricas de um produto/feature. → <a href="d04-design-docs.html#prd">04</a></dd>
+  <dt>Progressive disclosure</dt><dd>Carregar informações (ex.: skills) em camadas, só quando necessárias. → <a href="d07-aplicacoes-ia.html#skills">07</a></dd>
+  <dt>Prompt caching</dt><dd>Reaproveitamento do processamento de um prefixo repetido do prompt, reduzindo custo e latência. → <a href="d02-prompt-engineering.html#contexto">02</a></dd>
+  <dt>Prompt injection</dt><dd>Instruções maliciosas inseridas em dados processados pelo modelo. → <a href="d03-arquitetura-era-ia.html#seguranca">03</a></dd>
+  <dt>RAG</dt><dd>Retrieval-Augmented Generation: recuperar trechos relevantes e incluí-los no prompt. → <a href="d01-fundamentos-ia-generativa.html#estrategias">01</a></dd>
+  <dt>ReAct</dt><dd>Padrão Reasoning + Acting: pensar, agir (ferramenta), observar, em loop. → <a href="d02-prompt-engineering.html#tecnicas">02</a></dd>
+  <dt>Runbook / Playbook</dt><dd>Passo a passo para uma tarefa operacional / estratégia para um tipo de situação. → <a href="d04-design-docs.html#formatos">04</a></dd>
+  <dt>Runner (ADK)</dt><dd>Componente que executa o agente, emite eventos e persiste a sessão. → <a href="d08-agentes.html#runtime">08</a></dd>
+  <dt>SDD (Spec-Driven Development)</dt><dd>Desenvolvimento em que a especificação é o artefato principal que guia o agente. → <a href="d06-modo-agente.html#sdd">06</a></dd>
+  <dt>Skill</dt><dd>Pasta com SKILL.md, scripts e referências que o agente carrega sob demanda. → <a href="d06-modo-agente.html#skills-gates">06</a></dd>
+  <dt>SLI / SLO / SLA</dt><dd>Indicador, objetivo interno e acordo contratual de confiabilidade. → <a href="d10-devops-sre.html#fundamentos">10</a></dd>
+  <dt>Streaming</dt><dd>Envio dos tokens ao cliente à medida que são gerados. → <a href="d03-arquitetura-era-ia.html#fluxos">03</a></dd>
+  <dt>Structured outputs</dt><dd>Recurso que garante que a resposta siga um esquema JSON. → <a href="d07-aplicacoes-ia.html#integrando">07</a></dd>
+  <dt>Subagente</dt><dd>Agente com contexto, instruções e ferramentas próprias, chamado por outro agente. → <a href="d06-modo-agente.html#paralelo">06</a></dd>
+  <dt>System prompt</dt><dd>Instruções do desenvolvedor que definem papel, regras e contexto permanente. → <a href="d02-prompt-engineering.html#estrutura">02</a></dd>
+  <dt>Temperature / top-k / top-p</dt><dd>Parâmetros de amostragem do próximo token. → <a href="d01-fundamentos-ia-generativa.html#geracao">01</a></dd>
+  <dt>Token</dt><dd>Unidade de texto processada pelo modelo; base de preço e limites. → <a href="d01-fundamentos-ia-generativa.html#geracao">01</a></dd>
+  <dt>Tool use (function calling)</dt><dd>Mecanismo em que o modelo pede a execução de funções definidas pela aplicação. → <a href="d07-aplicacoes-ia.html#integrando">07</a></dd>
+  <dt>Transformer</dt><dd>Arquitetura de rede neural baseada em self-attention, base dos LLMs. → <a href="d01-fundamentos-ia-generativa.html#por-dentro">01</a></dd>
+  <dt>Worktree (git)</dt><dd>Cópia de trabalho adicional do mesmo repositório, usada para agentes em paralelo. → <a href="d06-modo-agente.html#paralelo">06</a></dd>
+</dl>
+
+<script>
+  document.getElementById("filtro").addEventListener("input", (e) => {
+    const q = e.target.value.trim().toLowerCase();
+    document.querySelectorAll("#lista dt").forEach((dt) => {
+      const dd = dt.nextElementSibling;
+      const show = !q || (dt.textContent + dd.textContent).toLowerCase().includes(q);
+      dt.style.display = dd.style.display = show ? "" : "none";
+    });
+  });
+</script>
+
+</article>
+</main>
+</body>
+</html>

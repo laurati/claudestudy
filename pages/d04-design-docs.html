@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>04 · Design Docs com IA — ClaudeStudy</title>
+<link rel="stylesheet" href="../css/style.css">
+<script src="../js/site.js" defer></script>
+<script type="module">
+  // Renderiza os blocos .mermaid (requer internet; sem ela, o código-fonte continua visível)
+  import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs";
+  const dark = document.documentElement.dataset.theme === "dark";
+  mermaid.initialize({ startOnLoad: true, theme: dark ? "dark" : "default" });
+</script>
+<style>.mermaid{background:var(--card-bg);border:1px solid var(--border);border-radius:6px;padding:12px;overflow-x:auto;text-align:center}</style>
+</head>
+<body data-root="..">
+<main>
+<article class="content">
+
+<span class="kicker">Disciplina 04</span>
+<h1>Design Docs com IA</h1>
+<p class="lead">Documentar não é mais opcional: é como a IA entende o que você quer construir. Um bom documento é, ao mesmo tempo, alinhamento para o time e <strong>contexto</strong> para o agente.</p>
+
+<div class="objectives">
+  <h4>Ao finalizar esta disciplina você será capaz de:</h4>
+  <ul>
+    <li>Criar documentações que aumentam a efetividade da IA</li>
+    <li>Entender os diferentes tipos de design docs na engenharia de software</li>
+    <li>Gerar e manter documentação técnica com apoio da IA</li>
+    <li>Registrar decisões técnicas de forma clara e objetiva</li>
+    <li>Transformar documentação em ativo técnico para o time e para a IA</li>
+  </ul>
+</div>
+
+<!-- ============================================================ -->
+<h2 id="fundamentos">Fundamentos de Design Docs</h2>
+<h3>Estruturação</h3>
+<p>Um design doc responde, em ordem: <strong>por que</strong> (problema e contexto), <strong>o quê</strong> (objetivos, escopo, requisitos), <strong>como</strong> (solução proposta, alternativas, trade-offs) e <strong>e daí</strong> (riscos, plano de rollout, métricas de sucesso). Estrutura mínima:</p>
+<pre class="plain"><code>1. Contexto e problema
+2. Objetivos e não-objetivos
+3. Proposta (com diagramas)
+4. Alternativas consideradas
+5. Riscos, segurança, custos
+6. Plano de implementação / rollout
+7. Métricas de sucesso
+8. Perguntas em aberto</code></pre>
+
+<h3>Objetivos e escopo</h3>
+<p>Os <strong>não-objetivos</strong> são tão importantes quanto os objetivos: eles impedem que o escopo cresça e — com IA — evitam que o agente "vá além" e implemente o que ninguém pediu.</p>
+
+<h3>Ferramentas</h3>
+<p>Docs-as-code (Markdown no repositório + revisão por PR) é o formato mais amigável para IA, porque o agente lê os arquivos diretamente. Complementos: Mermaid/PlantUML/Structurizr para diagramas, Notion/Confluence/Google Docs para colaboração com áreas não técnicas, e assistentes de IA para gerar rascunhos.</p>
+
+<h3>Design Docs na era da IA</h3>
+<p>Mudou o <strong>leitor</strong>: além de pessoas, agentes de código leem os documentos para executar tarefas. Consequências:</p>
+<ul>
+  <li>Precisão vale mais que prosa bonita: nomes exatos de módulos, comandos, contratos.</li>
+  <li>Critérios de aceite verificáveis viram os "testes" do agente.</li>
+  <li>Documentos menores e modulares (um por feature/decisão) cabem melhor no contexto do que um documento gigante.</li>
+  <li>O custo de escrever caiu (a IA gera rascunhos); o valor de <strong>revisar e decidir</strong> subiu.</li>
+</ul>
+
+<h3>Documentação como contexto</h3>
+<p>Ferramentas como o Claude Code carregam automaticamente arquivos de memória do projeto (<code>CLAUDE.md</code>) e outros leem <code>AGENTS.md</code>, <code>.cursor/rules</code> etc. O que estiver documentado ali vira comportamento padrão do agente. Ver <a href="https://code.claude.com/docs/en/memory">Claude Code — Memory</a> e <a href="https://agents.md">AGENTS.md</a>.</p>
+<div class="tip"><strong>Regra prática:</strong> se você explicou algo duas vezes para a IA, documente. Se o documento não muda o comportamento do agente, ele é ruído — corte.</div>
+
+<!-- ============================================================ -->
+<h2 id="formatos">Formatos de documentação</h2>
+<div class="table-wrap">
+<table>
+  <tr><th>Categoria</th><th>Documento</th><th>Para que serve</th></tr>
+  <tr><td rowspan="5">Requisitos e produto</td><td><strong>PRD</strong> (Product Requirements Document)</td><td>O problema, para quem, o que o produto deve fazer e como medir sucesso.</td></tr>
+  <tr><td><strong>TRD</strong> (Technical Requirements Document)</td><td>Requisitos técnicos e não funcionais derivados do PRD (desempenho, segurança, integrações).</td></tr>
+  <tr><td><strong>FRD</strong> (Functional Requirements Document)</td><td>Detalhamento das funcionalidades: regras, fluxos, validações.</td></tr>
+  <tr><td><strong>User Stories</strong></td><td>"Como &lt;persona&gt;, quero &lt;ação&gt; para &lt;benefício&gt;" + critérios de aceite.</td></tr>
+  <tr><td><strong>Epics</strong></td><td>Agrupam várias stories em torno de um objetivo maior.</td></tr>
+  <tr><td rowspan="2">Decisões técnicas</td><td><strong>RFC</strong> (Request for Comments)</td><td>Proposta aberta para discussão <em>antes</em> da decisão.</td></tr>
+  <tr><td><strong>ADR</strong> (Architecture Decision Record)</td><td>Registro curto e imutável de uma decisão <em>tomada</em> e seu porquê.</td></tr>
+  <tr><td>Engineering Guidelines</td><td>Workflow, Coding Standards, Code Review, PRs, Testing</td><td>Como o time trabalha; vira regra para humanos e agentes.</td></tr>
+  <tr><td>Design e Arquitetura</td><td>System Design, Low Level Design, C4 Model</td><td>Da visão macro (sistemas e containers) ao detalhe (classes, tabelas, sequências).</td></tr>
+  <tr><td rowspan="3">Operações</td><td><strong>Runbook</strong></td><td>Passo a passo para uma tarefa operacional específica (ex.: "rotacionar certificado").</td></tr>
+  <tr><td><strong>Playbook</strong></td><td>Estratégia para um tipo de situação (ex.: "incidente de indisponibilidade"), com papéis e decisões.</td></tr>
+  <tr><td><strong>Postmortem</strong></td><td>Análise <em>blameless</em> pós-incidente: linha do tempo, causa raiz, ações.</td></tr>
+</table>
+</div>
+
+<!-- ============================================================ -->
+<h2 id="prd">Documentos de Produto (PRDs)</h2>
+<h3>PRDs de alto nível e PRDs de feature</h3>
+<ul>
+  <li><strong>PRD de alto nível</strong>: visão do produto, público, problemas, objetivos de negócio, principais capacidades, roadmap macro.</li>
+  <li><strong>PRD de feature</strong>: uma funcionalidade específica, com fluxos, requisitos e critérios de aceite detalhados — é o insumo direto para a especificação técnica e para o agente.</li>
+</ul>
+<h3>Principais seções de um PRD</h3>
+<pre class="plain"><code># PRD — &lt;nome&gt;
+## 1. Contexto e problema        (dados, evidências, quem sofre)
+## 2. Objetivos / Não-objetivos
+## 3. Personas e jornadas
+## 4. Requisitos funcionais       (RF-01, RF-02… numerados!)
+## 5. Requisitos não funcionais   (desempenho, segurança, acessibilidade)
+## 6. Critérios de aceite         (Given/When/Then)
+## 7. Métricas de sucesso         (KPIs, como medir)
+## 8. Dependências e riscos
+## 9. Fora de escopo / futuro
+## 10. Perguntas em aberto</code></pre>
+<h3>Exemplos práticos de PRD</h3>
+<div class="example">
+  <h4>Exemplo: trecho de PRD de feature</h4>
+<pre class="plain"><code># PRD — Cancelamento de pedido pelo app
+## Problema
+32% dos contatos no SAC são pedidos de cancelamento simples (dados de jan–mar).
+## Objetivos
+- Permitir cancelamento self-service em até 24h após a compra.
+- Reduzir contatos de cancelamento no SAC em 50% em 3 meses.
+## Não-objetivos
+- Cancelamento parcial de itens. Reembolso via PIX (fase 2).
+## Requisitos funcionais
+RF-01 O botão "Cancelar pedido" aparece só para pedidos com status PAGO e &lt; 24h.
+RF-02 O usuário escolhe um motivo (lista fixa) antes de confirmar.
+RF-03 Após confirmar, o estoque é liberado e o estorno é solicitado ao gateway.
+## Critérios de aceite
+Dado um pedido PAGO criado há 2h, quando o usuário confirma o cancelamento,
+então o status vira CANCELADO e um e-mail de confirmação é enviado.
+Dado um pedido ENVIADO, então o botão não é exibido.</code></pre>
+</div>
+<h3>Geração de PRD com IA</h3>
+<p>A IA é excelente para <strong>entrevistar</strong> você e organizar o resultado — e péssima para inventar o contexto de negócio. Use-a como facilitadora:</p>
+<pre class="plain"><code>Você é um PM sênior. Quero escrever um PRD para: {{IDEIA}}.
+Faça perguntas UMA POR VEZ sobre problema, usuários, métricas, restrições e
+escopo, até ter informação suficiente (máx. 12 perguntas).
+Depois gere o PRD no template abaixo, numerando requisitos (RF-xx, RNF-xx)
+e escrevendo critérios de aceite em Given/When/Then.
+Marque como [SUPOSIÇÃO] tudo que você inferiu sem eu ter dito.
+&lt;template&gt;...&lt;/template&gt;</code></pre>
+
+<!-- ============================================================ -->
+<h2 id="design-arquitetura">Design e Arquitetura</h2>
+<h3>High Level Design Document (HLD)</h3>
+<p>Visão macro da solução: contexto do sistema, componentes/containers, integrações, fluxos principais, decisões de tecnologia, requisitos não funcionais e como serão atendidos (escala, disponibilidade, segurança), estimativas de capacidade e custo.</p>
+<h3>Feature Design Doc (FDD)</h3>
+<p>O "como" de uma feature: mudanças de API (contratos), modelo de dados (migrações), diagramas de sequência, tratamento de erros, feature flags, plano de testes e de rollout. É o documento que um agente de código consegue transformar em plano de implementação.</p>
+<h3>Deep Research aplicada à geração de documentos técnicos</h3>
+<p>Ferramentas de <em>deep research</em> (pesquisa agêntica em várias fontes) ajudam na fase de levantamento: comparar bancos vetoriais, reunir benchmarks, levantar padrões de mercado, ler documentação de APIs de terceiros. Use para gerar o <strong>anexo de pesquisa</strong> do HLD — sempre conferindo as fontes citadas.</p>
+<h3>Prompts para High Level Design e FDD</h3>
+<div class="example">
+  <h4>Exemplo: prompt para FDD a partir de PRD + código</h4>
+<pre class="plain"><code>Leia o PRD em docs/prd/cancelamento.md e explore o código em src/orders/.
+Escreva um Feature Design Doc em docs/fdd/cancelamento.md contendo:
+1. Resumo da solução (1 parágrafo)
+2. Mudanças de API (OpenAPI dos endpoints novos/alterados)
+3. Modelo de dados e migração (SQL)
+4. Diagrama de sequência Mermaid do fluxo de cancelamento
+5. Erros e casos de borda (mapeie cada um a um RF do PRD)
+6. Plano de testes (unitário, integração, E2E)
+7. Rollout com feature flag e métricas
+Para cada decisão relevante, sugira um ADR. Não implemente código ainda.</code></pre>
+</div>
+
+<!-- ============================================================ -->
+<h2 id="diagramas">Diagramas com IA</h2>
+<h3>Diagramas C4: System Context, Containers, Component e Code</h3>
+<p>O <a href="https://c4model.com">modelo C4</a> (Simon Brown) descreve arquitetura em quatro níveis de zoom, como um mapa:</p>
+<ol>
+  <li><strong>System Context</strong>: seu sistema como uma caixa, com usuários e sistemas externos.</li>
+  <li><strong>Containers</strong>: aplicações e armazenamentos que compõem o sistema (API, SPA, banco, fila).</li>
+  <li><strong>Components</strong>: módulos dentro de um container.</li>
+  <li><strong>Code</strong>: classes/funções (geralmente gerado pela IDE; raramente vale mantê-lo à mão).</li>
+</ol>
+<div class="example">
+  <h4>Exemplo: C4 de containers em Mermaid</h4>
+<pre><code>C4Container
+  title Loja — Containers
+  Person(cliente, "Cliente")
+  System_Boundary(loja, "Loja") {
+    Container(app, "App Web", "Next.js")
+    Container(api, "API de Pedidos", "Nest.js")
+    ContainerDb(db, "Banco", "PostgreSQL")
+  }
+  System_Ext(pag, "Gateway de Pagamento")
+  Rel(cliente, app, "Usa", "HTTPS")
+  Rel(app, api, "Chama", "JSON/HTTPS")
+  Rel(api, db, "Lê/escreve")
+  Rel(api, pag, "Estorna", "HTTPS")</code></pre>
+<div class="mermaid">C4Container
+  title Loja — Containers
+  Person(cliente, "Cliente")
+  System_Boundary(loja, "Loja") {
+    Container(app, "App Web", "Next.js")
+    Container(api, "API de Pedidos", "Nest.js")
+    ContainerDb(db, "Banco", "PostgreSQL")
+  }
+  System_Ext(pag, "Gateway de Pagamento")
+  Rel(cliente, app, "Usa", "HTTPS")
+  Rel(app, api, "Chama", "JSON/HTTPS")
+  Rel(api, db, "Lê/escreve")
+  Rel(api, pag, "Estorna", "HTTPS")</div>
+</div>
+
+<h3>Diagramas Mermaid: Flowchart, Sequence, Class, ER e State</h3>
+<p><a href="https://mermaid.js.org">Mermaid</a> é texto que vira diagrama — versionável, revisável em PR, renderizado pelo GitHub/GitLab, e fácil para a IA gerar e ler.</p>
+<div class="example">
+  <h4>Sequence diagram — cancelamento de pedido</h4>
+<pre><code>sequenceDiagram
+  actor U as Usuário
+  participant A as API
+  participant DB as Banco
+  participant G as Gateway
+  U-&gt;&gt;A: POST /orders/42/cancel
+  A-&gt;&gt;DB: status = PAGO e &lt; 24h?
+  alt elegível
+    A-&gt;&gt;G: solicitar estorno
+    G--&gt;&gt;A: ok
+    A-&gt;&gt;DB: status = CANCELADO
+    A--&gt;&gt;U: 200 Cancelado
+  else não elegível
+    A--&gt;&gt;U: 409 Não pode cancelar
+  end</code></pre>
+<div class="mermaid">sequenceDiagram
+  actor U as Usuário
+  participant A as API
+  participant DB as Banco
+  participant G as Gateway
+  U->>A: POST /orders/42/cancel
+  A->>DB: status = PAGO e < 24h?
+  alt elegível
+    A->>G: solicitar estorno
+    G-->>A: ok
+    A->>DB: status = CANCELADO
+    A-->>U: 200 Cancelado
+  else não elegível
+    A-->>U: 409 Não pode cancelar
+  end</div>
+</div>
+<div class="example">
+  <h4>State diagram — ciclo de vida do pedido</h4>
+<div class="mermaid">stateDiagram-v2
+  [*] --> CRIADO
+  CRIADO --> PAGO: pagamento aprovado
+  PAGO --> CANCELADO: cancelamento (< 24h)
+  PAGO --> ENVIADO: despacho
+  ENVIADO --> ENTREGUE
+  CANCELADO --> [*]
+  ENTREGUE --> [*]</div>
+</div>
+<div class="example">
+  <h4>ER e Flowchart</h4>
+<div class="mermaid">erDiagram
+  CLIENTE ||--o{ PEDIDO : faz
+  PEDIDO ||--|{ ITEM : contem
+  PRODUTO ||--o{ ITEM : "aparece em"</div>
+<div class="mermaid">flowchart LR
+  A[Pedido de cancelamento] --> B{Status PAGO?}
+  B -- não --> X[Recusar]
+  B -- sim --> C{Menos de 24h?}
+  C -- não --> X
+  C -- sim --> D[Estornar] --> E[Liberar estoque] --> F[Notificar]</div>
+</div>
+<div class="example">
+  <h4>Class diagram</h4>
+<div class="mermaid">classDiagram
+  class Pedido {
+    +id: string
+    +status: Status
+    +criadoEm: Date
+    +cancelar(motivo) void
+    +podeCancelar() bool
+  }
+  class LLM {
+    &lt;&lt;interface&gt;&gt;
+    +complete(prompt) string
+  }
+  class ClaudeLLM
+  LLM <|.. ClaudeLLM</div>
+</div>
+
+<h3>Geração de diagramas C4 e Mermaid com IA</h3>
+<pre class="plain"><code>Analise o docker-compose.yml, os módulos em src/ e as variáveis de ambiente.
+Gere em Mermaid: (1) C4 System Context, (2) C4 Containers,
+(3) sequence diagram do fluxo de checkout.
+Use apenas componentes que EXISTEM no código; liste à parte o que você supôs.</code></pre>
+<div class="tip">Peça diagramas <strong>a partir do código</strong> para documentar o que existe (engenharia reversa) e <strong>a partir do PRD</strong> para propor o que vai existir — e compare os dois para achar divergências.</div>
+
+<!-- ============================================================ -->
+<h2 id="adr">Architecture Decision Record (ADR)</h2>
+<h3>Estrutura clássica de um ADR e MADRs</h3>
+<p>Formato clássico de Michael Nygard: <strong>Título, Status, Contexto, Decisão, Consequências</strong>. O <a href="https://adr.github.io/madr/">MADR</a> (Markdown Any Decision Records) acrescenta drivers de decisão, opções consideradas e prós/contras de cada uma.</p>
+<div class="example">
+  <h4>Exemplo: ADR no formato MADR</h4>
+<pre><code>---
+status: accepted
+date: 2026-03-10
+deciders: [laura, time-plataforma]
+supersedes: ADR-0007
+---
+# ADR-0012: Usar pgvector em vez de banco vetorial gerenciado
+
+## Contexto e problema
+Precisamos de busca semântica para ~2M chunks no assistente de suporte.
+
+## Drivers de decisão
+- Já operamos PostgreSQL com alta disponibilidade
+- Necessidade de filtros por tenant e transações com dados relacionais
+- Orçamento limitado
+
+## Opções consideradas
+1. pgvector  2. Pinecone  3. Qdrant self-hosted
+
+## Decisão
+Escolhemos **pgvector**, porque atende ao volume com índice HNSW,
+reaproveita operação e backup existentes e permite JOIN com permissões.
+
+## Consequências
+- Bom: sem novo fornecedor; consistência transacional.
+- Ruim: escalar além de ~50M vetores exigirá reavaliação (ver gatilho abaixo).
+- Gatilho de revisão: p95 de busca &gt; 150ms ou &gt; 20M vetores.</code></pre>
+</div>
+<h3>Status, metadados e fluxos</h3>
+<p>Status típicos: <code>proposed</code> → <code>accepted</code> | <code>rejected</code> → (mais tarde) <code>deprecated</code> ou <code>superseded by ADR-XXXX</code>. ADRs são <strong>imutáveis</strong>: não se edita a decisão, cria-se um novo ADR que substitui o anterior. Metadados úteis: data, decisores, links para RFC/PRD/PR, tags.</p>
+<h3>Quando usar, quando são opcionais e quando evitar</h3>
+<ul>
+  <li><strong>Use</strong>: decisões difíceis de reverter ou com impacto amplo (banco, linguagem, protocolo, padrão de integração, provedor de LLM, estratégia de autenticação).</li>
+  <li><strong>Opcional</strong>: decisões locais e baratas de mudar (biblioteca de datas de um módulo).</li>
+  <li><strong>Evite</strong>: usar ADR como ata de reunião, tutorial ou documentação de API; ADRs para decisões triviais (vira ruído e ninguém lê).</li>
+</ul>
+<h3>Geração e linkagem de ADRs com IA</h3>
+<pre class="plain"><code>A partir da discussão abaixo (thread do Slack / comentários do PR), gere um ADR
+no formato MADR. Liste as opções realmente discutidas, com prós e contras
+mencionados pelas pessoas. Não invente opções.
+Verifique em docs/adr/ se algum ADR existente é afetado e, se for, indique
+"supersedes" ou "relates to" e atualize o índice docs/adr/README.md.</code></pre>
+<p>Linkagem: mantenha um índice, referencie ADRs no código (<code>// ver ADR-0012</code>) e no <code>CLAUDE.md</code>/<code>AGENTS.md</code> ("decisões arquiteturais em docs/adr; respeite as aceitas"). Assim o agente não "desfaz" decisões.</p>
+
+<!-- ============================================================ -->
+<h2 id="guidelines">Engineering Guidelines</h2>
+<h3>Guidelines na era da IA</h3>
+<p>Guidelines viram <strong>instruções executáveis</strong> para agentes: o que antes era um wiki que ninguém lia agora é carregado em todo prompt. Por isso devem ser curtas, específicas e verificáveis. E o que puder ser checado por ferramenta (lint, formatação, tipos) deve ser checado por ferramenta — não por instrução.</p>
+<h3>Seções sugeridas de um guideline</h3>
+<pre class="plain"><code># Engineering Guidelines
+## Stack e versões            (linguagem, frameworks, banco, infra)
+## Comandos                   (build, test, lint, rodar local)
+## Estrutura do projeto       (onde fica o quê)
+## Padrões de código          (nomes, erros, logs, injeção de dependência)
+## Testes                     (pirâmide, onde ficam, cobertura mínima, o que mockar)
+## Git e PRs                  (branches, commits convencionais, template de PR)
+## Code review                (o que bloqueia, o que é sugestão)
+## Segurança                  (segredos, validação, dependências)
+## Coisas que NÃO fazer       (com o porquê)</code></pre>
+<h3>Project Stack, pre-commit e automações</h3>
+<div class="example">
+  <h4>Exemplo: .pre-commit-config.yaml</h4>
+<pre><code>repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-yaml
+      - id: detect-private-key
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: v8.21.2
+    hooks:
+      - id: gitleaks
+  - repo: local
+    hooks:
+      - id: tests
+        name: unit tests
+        entry: make test
+        language: system
+        pass_filenames: false</code></pre>
+</div>
+<p>Automações complementares: CI que roda lint/testes/SAST, bots de dependências, <em>hooks</em> do agente (o Claude Code permite rodar comandos automaticamente antes/depois de ações — ver <a href="https://code.claude.com/docs/en/hooks-guide">Hooks</a>).</p>
+<h3>Geração de guidelines com IA</h3>
+<pre class="plain"><code>Analise este repositório (configs, código, histórico de PRs) e proponha um
+docs/GUIDELINES.md descrevendo as convenções que o time JÁ segue na prática.
+Para cada regra, cite 1 exemplo do código. Aponte inconsistências encontradas
+(ex.: dois estilos de tratamento de erro) como perguntas para o time decidir.</code></pre>
+
+<!-- ============================================================ -->
+<h2 id="automacao">Automação da documentação</h2>
+<h3>Geração automatizada de documentações e criação de assistentes de IA</h3>
+<ul>
+  <li>Docs de API geradas a partir de OpenAPI/código; changelogs a partir de commits convencionais.</li>
+  <li>Comandos/skills reutilizáveis no agente ("/gerar-adr", "/atualizar-readme") — ver <a href="https://code.claude.com/docs/en/skills">Claude Code Skills</a> e <a href="https://code.claude.com/docs/en/slash-commands">slash commands</a>.</li>
+  <li>Assistente de documentação: um agente com acesso ao repositório e ao template que entrevista o autor e gera o rascunho.</li>
+</ul>
+<h3>Manutenção e atualização de documentações com IA</h3>
+<p>Documentação desatualizada é pior que nenhuma — para a IA, é contexto errado. Estratégias:</p>
+<ul>
+  <li><strong>Docs no mesmo PR que o código</strong>: um job de CI pede para o agente checar se o diff exige atualização de docs (README, OpenAPI, ADR) e comenta no PR.</li>
+  <li><strong>Revisões periódicas</strong>: agente agendado compara docs com código e abre issues de divergência.</li>
+  <li><strong>Donos</strong> por documento (CODEOWNERS) e data de última revisão.</li>
+</ul>
+<div class="example">
+  <h4>Exemplo: GitHub Action que pede revisão de docs ao Claude</h4>
+<pre><code># .github/workflows/docs-check.yml  (ver docs oficiais do Claude Code GitHub Actions)
+name: docs-check
+on: pull_request
+jobs:
+  docs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: anthropics/claude-code-action@v1
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          prompt: |
+            Verifique se as mudanças deste PR exigem atualizar README, docs/ ou ADRs.
+            Se sim, comente no PR listando o que mudar. Não faça commits.</code></pre>
+</div>
+<p>Ver <a href="https://code.claude.com/docs/en/github-actions">Claude Code GitHub Actions</a>.</p>
+
+<!-- ============================================================ -->
+<h2 id="recursos">Recursos para aprofundar</h2>
+<div class="resources">
+  <div class="box docs"><h4>📘 Documentação do Claude</h4><ul>
+    <li><a href="https://code.claude.com/docs/en/memory">Claude Code: memória (CLAUDE.md)</a></li>
+    <li><a href="https://code.claude.com/docs/en/best-practices">Claude Code best practices</a></li>
+    <li><a href="https://code.claude.com/docs/en/skills">Skills</a> · <a href="https://code.claude.com/docs/en/slash-commands">Slash commands</a></li>
+    <li><a href="https://code.claude.com/docs/en/github-actions">GitHub Actions</a></li>
+    <li><a href="https://platform.claude.com/docs/en/build-with-claude/prompt-engineering/long-context-tips">Long context tips</a> (docs longos como contexto)</li>
+  </ul></div>
+  <div class="box reading"><h4>📄 Referências</h4><ul>
+    <li><a href="https://c4model.com">C4 model</a> · <a href="https://mermaid.js.org">Mermaid</a></li>
+    <li><a href="https://adr.github.io">ADR GitHub org</a> · <a href="https://adr.github.io/madr/">MADR</a></li>
+    <li><a href="https://agents.md">AGENTS.md</a></li>
+    <li><a href="https://github.com/github/spec-kit">GitHub Spec Kit</a> (spec-driven)</li>
+  </ul></div>
+  <div class="box videos"><h4>▶️ Vídeos</h4><ul>
+    <li><a href="https://www.youtube.com/results?search_query=c4+model+simon+brown+visualising+software+architecture">Buscar: Simon Brown — Visualising software architecture (C4)</a></li>
+    <li><a href="https://www.youtube.com/results?search_query=architecture+decision+records+ADR+explained">Buscar: ADRs explicados</a></li>
+    <li><a href="https://www.youtube.com/results?search_query=design+docs+at+google+how+to+write">Buscar: como escrever design docs</a></li>
+    <li><a href="https://www.youtube.com/results?search_query=PRD+com+IA+product+requirements+document">Buscar: PRD com IA</a></li>
+  </ul></div>
+  <div class="box courses"><h4>🎓 Cursos</h4><ul>
+    <li><a href="https://anthropic.skilljar.com/">Anthropic Academy</a> — Claude Code in Action</li>
+    <li><a href="https://www.deeplearning.ai/short-courses/claude-code-a-highly-agentic-coding-assistant/">Claude Code: A Highly Agentic Coding Assistant</a></li>
+  </ul></div>
+</div>
+
+<h2 id="exercicios">Exercícios e quiz</h2>
+<details><summary>Exercício — pacote de documentação de uma feature</summary>
+<p>Escolha uma feature real do seu trabalho. Usando IA como entrevistadora, gere: PRD de feature → FDD com diagrama de sequência Mermaid → 1 ADR → atualização do <code>CLAUDE.md</code>/<code>AGENTS.md</code>. Depois peça a um agente para implementar só com esses documentos e avalie: o que faltou nos docs?</p></details>
+
+<div class="quiz" data-answer="b">
+  <div class="q">1. Uma decisão registrada num ADR aceito mudou. O que fazer?</div>
+  <button class="opt" data-opt="a">Editar o ADR antigo com a nova decisão</button>
+  <button class="opt" data-opt="b">Criar um novo ADR e marcar o antigo como "superseded"</button>
+  <button class="opt" data-opt="c">Apagar o ADR antigo</button>
+  <button class="opt" data-opt="d">Registrar só no Slack</button>
+  <div class="explain">ADRs são imutáveis: o histórico de "por que decidimos X na época" é justamente o valor.</div>
+</div>
+<div class="quiz" data-answer="c">
+  <div class="q">2. Qual nível do C4 mostra API, SPA, banco e fila como caixas separadas?</div>
+  <button class="opt" data-opt="a">System Context</button>
+  <button class="opt" data-opt="b">Code</button>
+  <button class="opt" data-opt="c">Containers</button>
+  <button class="opt" data-opt="d">Components</button>
+  <div class="explain">Containers = unidades executáveis/implantáveis e armazenamentos.</div>
+</div>
+<div class="quiz" data-answer="a">
+  <div class="q">3. Por que "não-objetivos" são especialmente úteis quando um agente vai implementar?</div>
+  <button class="opt" data-opt="a">Evitam que o agente amplie o escopo implementando o que não foi pedido</button>
+  <button class="opt" data-opt="b">Reduzem o custo de tokens a zero</button>
+  <button class="opt" data-opt="c">Substituem os testes</button>
+  <button class="opt" data-opt="d">São exigidos pelo MCP</button>
+  <div class="explain">Limites explícitos reduzem retrabalho e mudanças não solicitadas.</div>
+</div>
+
+</article>
+</main>
+</body>
+</html>

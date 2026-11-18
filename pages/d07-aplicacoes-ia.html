@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>07 · Desenvolvimento de aplicações com IA — ClaudeStudy</title>
+<link rel="stylesheet" href="../css/style.css">
+<script src="../js/site.js" defer></script>
+</head>
+<body data-root="..">
+<main>
+<article class="content">
+
+<span class="kicker">Disciplina 07</span>
+<h1>Desenvolvimento de aplicações com IA</h1>
+<p class="lead">Chega de brincar com a IA: é hora de colocá-la para funcionar em aplicações de verdade — tanto como <em>ferramenta de construção</em> (backend Nest.js, frontend Next.js, design system com Figma) quanto como <em>parte da aplicação</em> (SDKs, LangChain, RAG).</p>
+
+<div class="objectives">
+  <h4>Ao finalizar esta disciplina você será capaz de:</h4>
+  <ul>
+    <li>Conectar modelos de IA nas suas aplicações com controle total</li>
+    <li>Criar fluxos reutilizáveis e organizados para trabalhar com IA</li>
+    <li>Enriquecer as respostas da IA com dados do seu próprio sistema</li>
+    <li>Automatizar extrações e análises em grandes volumes de texto</li>
+    <li>Aumentar a precisão das respostas com menos risco de alucinação</li>
+  </ul>
+</div>
+
+<!-- ============================================================ -->
+<h2 id="integrando">IA dentro da aplicação: SDKs, LangChain e RAG</h2>
+<p>Antes do conteúdo programático, a base prática para os objetivos acima: como uma aplicação chama um modelo, dá ferramentas a ele, extrai dados estruturados e usa RAG.</p>
+<h3>Chamada básica com SDK</h3>
+<div class="example">
+  <h4>Exemplo: TypeScript</h4>
+<pre><code>import Anthropic from "@anthropic-ai/sdk";
+const client = new Anthropic(); // ANTHROPIC_API_KEY no ambiente
+
+const msg = await client.messages.create({
+  model: "claude-opus-5-5",
+  max_tokens: 1000,
+  system: "Você resume tickets de suporte em uma frase objetiva.",
+  messages: [{ role: "user", content: ticketTexto }],
+});
+console.log(msg.content[0].type === "text" ? msg.content[0].text : "");</code></pre>
+</div>
+<h3>Tool use: dando acesso aos dados do seu sistema</h3>
+<p>Com <a href="https://platform.claude.com/docs/en/agents-and-tools/tool-use/overview">tool use</a> você descreve funções (nome, descrição, JSON Schema); o modelo decide chamá-las; <em>sua aplicação executa</em> e devolve o resultado.</p>
+<div class="example">
+  <h4>Exemplo: loop de ferramentas em Python</h4>
+<pre><code>import json, anthropic
+client = anthropic.Anthropic()
+
+tools = [{
+    "name": "buscar_pedido",
+    "description": "Retorna status, itens e data de um pedido pelo ID.",
+    "input_schema": {
+        "type": "object",
+        "properties": {"pedido_id": {"type": "string", "description": "Ex.: PED-123"}},
+        "required": ["pedido_id"],
+    },
+}]
+
+def executar(nome, entrada):
+    if nome == "buscar_pedido":
+        return db.pedidos.get(entrada["pedido_id"])   # sua lógica real
+
+msgs = [{"role": "user", "content": "Meu pedido PED-123 já foi enviado?"}]
+while True:
+    resp = client.messages.create(model="claude-opus-5-5", max_tokens=2000, tools=tools, messages=msgs)
+    if resp.stop_reason != "tool_use":
+        break
+    msgs.append({"role": "assistant", "content": resp.content})
+    msgs.append({"role": "user", "content": [
+        {"type": "tool_result", "tool_use_id": b.id, "content": json.dumps(executar(b.name, b.input))}
+        for b in resp.content if b.type == "tool_use"
+    ]})
+
+print(next(b.text for b in resp.content if b.type == "text"))</code></pre>
+</div>
+<h3>Extração estruturada em grandes volumes</h3>
+<p>Para extrair campos de milhares de documentos (contratos, e-mails, notas), combine <a href="https://platform.claude.com/docs/en/build-with-claude/structured-outputs">structured outputs</a> (garante o JSON) com a <a href="https://platform.claude.com/docs/en/build-with-claude/batch-processing">Batch API</a> (mais barato) e <a href="https://platform.claude.com/docs/en/build-with-claude/pdf-support">suporte a PDF</a>.</p>
+<h3>LangChain e RAG</h3>
+<p><a href="https://docs.langchain.com">LangChain</a> oferece abstrações para prompts, modelos, loaders de documentos, splitters, vector stores e retrievers — útil para montar pipelines RAG rapidamente. Conceitos de RAG: <a href="d01-fundamentos-ia-generativa.html#estrategias">Disciplina 01</a> e <a href="d03-arquitetura-era-ia.html#system-design">Disciplina 03</a>.</p>
+<div class="example">
+  <h4>Exemplo: RAG mínimo com LangChain</h4>
+<pre><code># pip install langchain-anthropic langchain-community langchain-text-splitters langchain-huggingface faiss-cpu
+from langchain_anthropic import ChatAnthropic
+from langchain_community.document_loaders import DirectoryLoader
+from langchain_text_splitters import RecursiveCharacterTextSplitter
+from langchain_huggingface import HuggingFaceEmbeddings
+from langchain_community.vectorstores import FAISS
+
+docs = DirectoryLoader("docs/ajuda", glob="**/*.md").load()
+chunks = RecursiveCharacterTextSplitter(chunk_size=800, chunk_overlap=100).split_documents(docs)
+store = FAISS.from_documents(chunks, HuggingFaceEmbeddings(model_name="sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"))
+
+pergunta = "Como emitir a segunda via do boleto?"
+trechos = store.similarity_search(pergunta, k=4)
+contexto = "\n\n".join(f"[{i}] {d.page_content}" for i, d in enumerate(trechos))
+
+llm = ChatAnthropic(model="claude-opus-5-5", max_tokens=1000)
+resposta = llm.invoke(
+    f"Responda só com base nos trechos, citando [n]. Se não houver a informação, diga que não sabe.\n\n"
+    f"&lt;trechos&gt;\n{contexto}\n&lt;/trechos&gt;\n\nPergunta: {pergunta}"
+)
+print(resposta.content)</code></pre>
+</div>
+
+<!-- ============================================================ -->
+<h2 id="fundamentos">Fundamentos do Desenvolvimento com IA</h2>
+<h3>Ferramentas, IDEs e workflows de desenvolvimento com IA</h3>
+<p>Recapitulando (Disciplinas 05 e 06): assistentes na IDE (Cursor, Copilot, Windsurf), agentes de terminal (Claude Code), agentes na nuvem que abrem PRs, servidores MCP e ferramentas de design (Figma). O workflow importa mais que a ferramenta.</p>
+<h3>Pilares do desenvolvimento moderno com IA</h3>
+<ol>
+  <li><strong>Contexto</strong>: documentação e regras que o agente lê.</li>
+  <li><strong>Especificação</strong>: o que construir, com critérios verificáveis.</li>
+  <li><strong>Verificação</strong>: testes, tipos, lint, E2E.</li>
+  <li><strong>Iteração em passos pequenos</strong> com commits frequentes.</li>
+  <li><strong>Reuso de conhecimento</strong>: skills, comandos, templates.</li>
+</ol>
+<h3>Introdução ao Spec Driven Development e paralelização</h3>
+<p>Specs como fonte de verdade e tasks independentes executadas em paralelo por subagentes — detalhado na <a href="d06-modo-agente.html#sdd">Disciplina 06</a>.</p>
+<h3>Documentação e artefatos que guiam a IA</h3>
+<p>PRD, specs, ADRs, OpenAPI, design tokens, guidelines de testes, <code>CLAUDE.md</code>/<code>AGENTS.md</code>. Cada artefato responde a uma pergunta que o agente faria.</p>
+
+<!-- ============================================================ -->
+<h2 id="ambiente">Preparando o Ambiente para a IA</h2>
+<h3>Arquivos de inicialização e contexto do agente</h3>
+<p><code>CLAUDE.md</code> (Claude Code), <code>AGENTS.md</code> (padrão aberto), <code>.cursor/rules/</code>, <code>.github/copilot-instructions.md</code>. Um truque comum: manter o conteúdo em <code>AGENTS.md</code> e fazer o <code>CLAUDE.md</code> importá-lo (o Claude Code suporta importar arquivos com <code>@caminho</code>).</p>
+<h3>O que deve e o que não deve entrar no contexto</h3>
+<div class="table-wrap">
+<table>
+  <tr><th>Deve entrar</th><th>Não deve entrar</th></tr>
+  <tr><td>Comandos de build/teste/lint</td><td>Segredos, tokens, senhas</td></tr>
+  <tr><td>Arquitetura e onde fica cada coisa</td><td>Tutorial genérico da linguagem/framework</td></tr>
+  <tr><td>Convenções não óbvias e "pegadinhas"</td><td>Regras que o linter/formatter já garante</td></tr>
+  <tr><td>Links para docs detalhadas (lidas sob demanda)</td><td>Documentação inteira colada</td></tr>
+  <tr><td>Decisões vigentes (ADRs)</td><td>Histórico de discussões, informações obsoletas</td></tr>
+</table>
+</div>
+<p>Use também <code>.claudeignore</code>/permissões de leitura negadas para arquivos sensíveis (<code>.env</code>) e pastas enormes geradas (<code>dist/</code>, <code>node_modules/</code>).</p>
+<h3>Testabilidade, convenções e políticas do projeto</h3>
+<p>Um projeto "amigável à IA" é, antes de tudo, um projeto testável: rodar um teste específico em segundos, ambiente local reproduzível (Docker), dados de seed, mensagens de erro claras. Políticas: o que o agente pode fazer sozinho (rodar testes, editar src/) e o que exige humano (push, migração em produção, mudar dependências).</p>
+<h3>Evolução e otimização de projetos existentes</h3>
+<p>Comece pelo "onboarding" do agente, gere o arquivo de contexto, adicione testes de caracterização nas áreas que serão alteradas, e evolua o harness a cada erro recorrente do agente.</p>
+
+<!-- ============================================================ -->
+<h2 id="skills">Skills: Reutilizando Conhecimento com a IA</h2>
+<h3>Que problemas as Skills resolvem no dia a dia</h3>
+<ul>
+  <li>Repetir as mesmas instruções em toda sessão ("nosso padrão de migração é…").</li>
+  <li>Contexto inchado: colocar tudo no CLAUDE.md custa tokens sempre.</li>
+  <li>Conhecimento que exige <em>ferramentas</em> (scripts, templates), não só texto.</li>
+  <li>Compartilhar boas práticas entre projetos e pessoas.</li>
+</ul>
+<h3>Mapeamento de Skills por linguagem, framework e ferramenta</h3>
+<div class="table-wrap">
+<table>
+  <tr><th>Tipo</th><th>Exemplos de skills</th></tr>
+  <tr><td>Linguagem</td><td>go-idiomatico, typescript-strict, python-typing</td></tr>
+  <tr><td>Framework</td><td>nestjs-modules, typeorm-migrations, nextjs-app-router, react-testing</td></tr>
+  <tr><td>Ferramenta</td><td>playwright-e2e, docker-compose, github-actions, terraform</td></tr>
+  <tr><td>Processo</td><td>prd-writer, spec-writer, code-review, release-notes</td></tr>
+  <tr><td>Documentos</td><td>pdf, docx, xlsx, pptx (skills oficiais da Anthropic)</td></tr>
+</table>
+</div>
+<h3>Skills oficiais da Anthropic e estruturação (frontmatter)</h3>
+<p>A Anthropic publica skills de exemplo e de documentos em <a href="https://github.com/anthropics/skills">github.com/anthropics/skills</a>. A estrutura mínima:</p>
+<pre><code>---
+name: typeorm-migrations          # identificador (minúsculas, hífens)
+description: Cria e revisa migrações TypeORM seguindo os padrões do projeto. Use ao alterar entidades ou schema do banco.
+---
+# Instruções
+...</code></pre>
+<p>A <strong>description</strong> é o que o modelo usa para decidir quando carregar a skill — escreva <em>o que faz</em> e <em>quando usar</em>.</p>
+<h3>Progressive disclosure e detalhes condicionais</h3>
+<div class="diagram">Nível 1  name + description        → sempre no contexto (poucas dezenas de tokens)
+Nível 2  corpo do SKILL.md         → carregado quando a skill é relevante
+Nível 3  arquivos referenciados    → lidos só se necessários
+         (reference/postgres.md, reference/mysql.md, scripts/*.py)</div>
+<p>Exemplo de detalhe condicional no SKILL.md: "Se o banco for PostgreSQL, leia <code>reference/postgres.md</code>; se for MySQL, <code>reference/mysql.md</code>." Assim só o necessário entra no contexto.</p>
+<h3>Criação de Skills próprias e integração com servidores MCP</h3>
+<p>MCP dá <em>capacidades</em> (acesso ao banco, ao Figma); skills dão <em>know-how</em> (como usar essas capacidades do jeito do seu time). Ex.: uma skill <code>db-investigation</code> que ensina a consultar o banco via MCP Postgres com queries somente leitura e limites.</p>
+<p>Docs: <a href="https://code.claude.com/docs/en/skills">Skills no Claude Code</a> · <a href="https://platform.claude.com/docs/en/agents-and-tools/agent-skills/overview">Agent Skills (API)</a>.</p>
+
+<!-- ============================================================ -->
+<h2 id="do-zero">Iniciando Projetos do Zero com IA</h2>
+<h3>Abordagem para projetos novos (greenfield)</h3>
+<ol>
+  <li>PRD de alto nível + escolha de stack registrada em ADRs.</li>
+  <li>Guidelines e <code>CLAUDE.md</code> <em>antes</em> do código.</li>
+  <li>Esqueleto que roda de ponta a ponta (walking skeleton) com CI e testes.</li>
+  <li>Features em fatias verticais pequenas.</li>
+</ol>
+<h3>Indo além do "Hello World"</h3>
+<p>O "Hello World" gerado por IA é fácil; o difícil é a fundação de produção: autenticação, configuração por ambiente, logs estruturados, tratamento de erros padronizado, migrações, health checks, Docker, CI, testes de cada camada. Peça isso explicitamente no bootstrap.</p>
+<h3>Bootstrap de um projeto com apoio da IA</h3>
+<div class="example">
+  <h4>Exemplo: prompt de bootstrap</h4>
+<pre class="plain"><code>Crie a fundação de uma API de pedidos com:
+- Nest.js + TypeScript strict, TypeORM + PostgreSQL, Docker Compose para dev
+- Módulos: health, orders (CRUD mínimo), config (validação de env com zod)
+- Logs estruturados (pino), filtro global de exceções com formato de erro padrão
+- Testes: unitário (jest) e e2e (supertest + testcontainers) para orders
+- GitHub Actions: lint, typecheck, test
+- Makefile com: dev, test, lint, check
+Antes de gerar, mostre a árvore de diretórios proposta e aguarde aprovação.</code></pre>
+</div>
+
+<!-- ============================================================ -->
+<h2 id="testes">Testes Automatizados na Era da IA</h2>
+<h3>Definição e categorização de testes</h3>
+<div class="table-wrap">
+<table>
+  <tr><th>Tipo</th><th>Escopo</th><th>Velocidade</th><th>Exemplo</th></tr>
+  <tr><td>Unitário</td><td>Uma função/classe isolada</td><td>ms</td><td><code>Order.canCancel()</code></td></tr>
+  <tr><td>Integração</td><td>Componentes + infraestrutura real (banco, fila)</td><td>s</td><td>Repositório com Postgres em container</td></tr>
+  <tr><td>Contrato</td><td>Acordo entre consumidor e provedor de API</td><td>s</td><td>Pact, validação de OpenAPI</td></tr>
+  <tr><td>E2E</td><td>Sistema inteiro pela interface</td><td>s–min</td><td>Playwright no fluxo de checkout</td></tr>
+</table>
+</div>
+<h3>Cobertura de código e o valor real de cada teste</h3>
+<p>Cobertura mostra o que <em>não</em> foi testado, mas não garante que o que foi executado foi <em>verificado</em>. IA consegue facilmente gerar 90% de cobertura com asserts fracos. Meça valor com <em>mutation testing</em> e pergunte: "se eu introduzir um bug aqui, algum teste falha?"</p>
+<h3>Caminho feliz, caminho triste e edge cases</h3>
+<ul>
+  <li><strong>Feliz:</strong> entrada válida, fluxo esperado.</li>
+  <li><strong>Triste:</strong> entradas inválidas, dependências falhando, permissões negadas.</li>
+  <li><strong>Edge cases:</strong> limites (0, 1, máximo), vazios, unicode, fuso horário, concorrência, idempotência.</li>
+</ul>
+<h3>Diretrizes de teste com criação e auditoria assistidas por IA</h3>
+<pre class="plain"><code># docs/TESTING.md (trecho)
+- Um teste verifica UM comportamento; nome: "deve &lt;resultado&gt; quando &lt;condição&gt;"
+- Não mockar o que é nosso dentro do mesmo módulo; mockar apenas fronteiras (HTTP, fila, LLM)
+- Proibido: asserts só de "não lançou exceção"; snapshots gigantes; sleep()
+- Todo bug corrigido ganha um teste de regressão
+
+Prompt de auditoria:
+"Audite os testes em src/orders/**. Para cada teste, diga se ele detectaria um bug
+real (dê um exemplo de mutação que ele pegaria) ou se é fraco. Sugira melhorias."</code></pre>
+<h3>Testes de ponta a ponta (E2E) de navegação</h3>
+<p>Playwright com seletores por <em>role</em>/label (resistentes a mudanças de layout), dados de teste isolados, e execução no CI. O agente pode usar o Playwright MCP para explorar a aplicação e então escrever o teste.</p>
+<h3>TDD (Test Driven Development) com IA</h3>
+<p>TDD é especialmente poderoso com agentes: o teste é a especificação executável e o critério de pronto. Ciclo: <strong>Red</strong> (você/IA escreve o teste, confirma que falha) → <strong>Green</strong> (IA implementa o mínimo) → <strong>Refactor</strong> (IA melhora com os testes verdes).</p>
+<div class="example">
+  <h4>Exemplo: instruções de TDD para o agente</h4>
+<pre class="plain"><code>Vamos fazer TDD para a regra de cancelamento.
+1. Escreva SOMENTE os testes em order.spec.ts para os critérios RF-01..RF-03. Rode e confirme que falham.
+2. Faça commit dos testes ("test: cancelamento").
+3. Implemente o mínimo para passar. NÃO altere os testes.
+4. Refatore mantendo verde. Commit.</code></pre>
+</div>
+
+<!-- ============================================================ -->
+<h2 id="backend">Construindo o Backend de uma Aplicação Real</h2>
+<h3>Arquitetura do projeto e workflows com IA</h3>
+<div class="diagram">apps/
+├── api/          Nest.js (módulos por domínio: orders, customers, payments)
+│   ├── src/orders/{domain,application,infra,http}
+│   └── test/     e2e
+└── web/          Next.js (app router)
+packages/
+└── api-client/   cliente gerado a partir do OpenAPI
+docs/{prd,specs,adr}   CLAUDE.md   docker-compose.yml   Makefile</div>
+<h3>Backend com Nest.js e ambiente com Docker</h3>
+<div class="example">
+  <h4>Exemplo: docker-compose para desenvolvimento</h4>
+<pre><code>services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: app
+      POSTGRES_PASSWORD: app
+      POSTGRES_DB: app
+    ports: ["5432:5432"]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U app"]
+      interval: 5s
+  api:
+    build: ./apps/api
+    env_file: .env
+    ports: ["3000:3000"]
+    depends_on:
+      db: { condition: service_healthy }</code></pre>
+<pre><code>// apps/api/src/orders/http/orders.controller.ts
+@Controller("orders")
+export class OrdersController {
+  constructor(private readonly cancelOrder: CancelOrderUseCase) {}
+
+  @Post(":id/cancel")
+  @ApiResponse({ status: 200, type: OrderDto })
+  @ApiResponse({ status: 409, description: "Pedido não pode ser cancelado" })
+  async cancel(@Param("id") id: string, @Body() body: CancelOrderDto) {
+    const result = await this.cancelOrder.execute(id, body.reason);
+    if (result.isErr()) throw new ConflictException(result.error.message);
+    return OrderDto.from(result.value);
+  }
+}</code></pre>
+</div>
+<h3>Configuração de contexto e regras para a IA</h3>
+<p>CLAUDE.md na raiz (visão do monorepo, comandos) + CLAUDE.md em <code>apps/api</code> (padrões Nest: um módulo por domínio, DTOs com class-validator, use cases sem dependência do Nest, repositórios via interface).</p>
+<h3>Curadoria de Skills de boas práticas (Nest.js e TypeORM)</h3>
+<p>Em vez de escrever do zero, faça curadoria: parta de skills públicas/da comunidade, <strong>revise</strong> (podem conter más práticas ou até instruções maliciosas), adapte às suas convenções e versione no repositório. Exemplos: <code>nestjs-module</code> (como criar módulo, provider, testes), <code>typeorm-migrations</code> (nunca usar <code>synchronize: true</code>; migrações reversíveis; índices concorrentes).</p>
+<h3>Integração de servidores MCP (Context7 e PostgreSQL)</h3>
+<ul>
+  <li><strong><a href="https://github.com/upstash/context7">Context7</a></strong>: injeta documentação atualizada e específica de versão das bibliotecas (Nest, TypeORM, Next) — reduz alucinação de APIs antigas.</li>
+  <li><strong>PostgreSQL MCP</strong>: o agente consulta o schema e dados reais (use usuário <em>somente leitura</em> e banco de dev).</li>
+</ul>
+<pre><code>claude mcp add --transport http context7 https://mcp.context7.com/mcp
+claude mcp add postgres -- npx -y @modelcontextprotocol/server-postgres postgresql://readonly:pw@localhost:5432/app</code></pre>
+
+<!-- ============================================================ -->
+<h2 id="workflow">Workflow: Pesquisar, Planejar e Implementar</h2>
+<h3>Ciclo de pesquisa, planejamento e implementação com IA</h3>
+<ol>
+  <li><strong>Pesquisar</strong>: o agente lê código, docs (Context7) e schema (MCP) e escreve <code>research.md</code> com o que encontrou.</li>
+  <li><strong>Planejar</strong>: a partir da pesquisa, gera <code>plan.md</code> dividido em fases, com arquivos e testes de cada fase.</li>
+  <li><strong>Implementar</strong>: fase por fase, rodando gates ao final de cada uma.</li>
+</ol>
+<h3>Geração e revisão de planos de implementação por fase</h3>
+<p>Revise o plano como revisaria um PR — é muito mais barato corrigir um plano do que código. Use o <em>plan mode</em> do Claude Code (o agente pesquisa e propõe sem editar arquivos).</p>
+<h3>Gestão da janela de contexto</h3>
+<ul>
+  <li>Uma sessão por fase; inicie limpa com <code>/clear</code> e aponte para <code>plan.md</code>.</li>
+  <li><code>/compact</code> quando a sessão ficar longa, com instruções do que preservar.</li>
+  <li>Subagentes para pesquisas extensas.</li>
+  <li>Evite colar logs/arquivos gigantes; prefira que o agente leia trechos.</li>
+</ul>
+<h3>Simplificação de código e commits assistidos por IA</h3>
+<p>Após a implementação, peça uma passada de <strong>simplificação</strong> ("remova abstrações desnecessárias, código morto e duplicação, sem mudar comportamento") e gere commits pequenos com mensagens convencionais (<code>feat:</code>, <code>fix:</code>, <code>refactor:</code>) descrevendo o porquê.</p>
+
+<!-- ============================================================ -->
+<h2 id="design-system">Design System com IA e Figma</h2>
+<h3>Front-end na era da IA e ferramentas de design</h3>
+<p>Gerar telas virou trivial; manter <strong>consistência visual</strong> não. O design system (tokens + componentes + regras) é o "contexto" que impede a IA de criar uma interface diferente a cada tela.</p>
+<h3>Integração com o Figma via MCP</h3>
+<p>O <a href="https://help.figma.com/hc/en-us/articles/32132100833559">servidor MCP do Figma</a> permite que o agente leia frames, componentes, variáveis e estilos de um arquivo de design e gere código fiel a ele (em vez de "adivinhar" a partir de um screenshot).</p>
+<h3>Sincronização de design tokens entre Figma e código</h3>
+<div class="diagram">Figma Variables / Tokens ──export JSON──► tokens.json ──Style Dictionary──► CSS vars / tailwind config
+        ▲                                                                            │
+        └──────────── auditoria (MCP + IA): divergências entre design e código ◄──────┘</div>
+<div class="example">
+  <h4>Exemplo: tokens como variáveis CSS (padrão shadcn/Tailwind)</h4>
+<pre><code>:root {
+  --background: 0 0% 100%;
+  --foreground: 222 47% 11%;
+  --primary: 160 95% 34%;
+  --primary-foreground: 0 0% 100%;
+  --radius: 0.5rem;
+}
+.dark {
+  --background: 222 47% 11%;
+  --foreground: 210 40% 98%;
+}</code></pre>
+</div>
+<h3>Auditoria e aplicação automatizada de tokens</h3>
+<pre class="plain"><code>Audite src/components/**: encontre cores hex/rgb, tamanhos em px e sombras
+que não usam os tokens definidos em src/styles/tokens.css.
+Gere uma tabela (arquivo, linha, valor, token sugerido) e aplique as
+substituições óbvias; liste as ambíguas para decisão do design.</code></pre>
+<p>Complemente com regras de lint (ex.: plugin que proíbe cores arbitrárias no Tailwind) — enforcement mecânico.</p>
+<h3>Uso de shadcn e regras do design system</h3>
+<p><a href="https://ui.shadcn.com">shadcn/ui</a> não é uma dependência fechada: os componentes são <em>copiados</em> para o seu projeto (Radix + Tailwind), então você e a IA podem adaptá-los. Isso o torna muito "amigável a agentes".</p>
+<pre><code>npx shadcn@latest init
+npx shadcn@latest add button dialog form table</code></pre>
+<p>Regras típicas no contexto: "use componentes de <code>@/components/ui</code>; nunca crie botão do zero; variantes via <code>cva</code>; ícones apenas de lucide-react".</p>
+
+<!-- ============================================================ -->
+<h2 id="frontend">Construindo o Frontend da Aplicação</h2>
+<h3>Workflow expandido com subagentes</h3>
+<p>Subagentes especializados: <em>ui-implementer</em> (implementa telas a partir do Figma via MCP), <em>api-integrator</em> (conecta ao cliente gerado), <em>e2e-tester</em> (escreve e roda Playwright), <em>a11y-reviewer</em> (acessibilidade).</p>
+<h3>Documentação de API com OpenAPI</h3>
+<p>O backend Nest gera o OpenAPI (<code>@nestjs/swagger</code>); o frontend gera um cliente tipado a partir dele. O contrato vira contexto compartilhado entre os agentes de back e front.</p>
+<pre><code># gera tipos TypeScript a partir do contrato
+npx openapi-typescript http://localhost:3000/api-json -o packages/api-client/schema.d.ts</code></pre>
+<h3>Fundação de IA para projetos Next.js</h3>
+<p>CLAUDE.md do app web: app router vs pages, server vs client components, onde ficam fetchers, padrão de formulários (react-hook-form + zod), estados de loading/erro (<code>loading.tsx</code>, <code>error.tsx</code>), regras do design system, comandos de teste. Use Context7 para a versão exata do Next.</p>
+<h3>Estratégias de teste no front-end (E2E e mocks de API)</h3>
+<ul>
+  <li><strong>Componentes</strong>: Testing Library (comportamento, não implementação).</li>
+  <li><strong>Mocks de API</strong>: MSW (Mock Service Worker) intercepta requisições — gere os handlers a partir do OpenAPI para manter o contrato.</li>
+  <li><strong>E2E</strong>: Playwright contra o backend real em ambiente de teste, poucos fluxos críticos.</li>
+</ul>
+<div class="example">
+  <h4>Exemplo: mock com MSW</h4>
+<pre><code>import { http, HttpResponse } from "msw";
+
+export const handlers = [
+  http.post("/api/orders/:id/cancel", ({ params }) =&gt;
+    params.id === "42"
+      ? HttpResponse.json({ id: "42", status: "CANCELADO" })
+      : HttpResponse.json({ message: "Pedido não pode ser cancelado" }, { status: 409 })
+  ),
+];</code></pre>
+</div>
+<h3>Planejamento de telas e implementação por fase</h3>
+<ol>
+  <li>Inventário de telas e estados (vazio, carregando, erro, sucesso) a partir do PRD e do Figma.</li>
+  <li>Fase 1: layout e navegação com dados mockados (MSW).</li>
+  <li>Fase 2: integração com a API real.</li>
+  <li>Fase 3: E2E dos fluxos críticos, acessibilidade, responsividade.</li>
+</ol>
+
+<!-- ============================================================ -->
+<h2 id="recursos">Recursos para aprofundar</h2>
+<div class="resources">
+  <div class="box docs"><h4>📘 Documentação do Claude</h4><ul>
+    <li><a href="https://platform.claude.com/docs/en/get-started">Get started (API)</a></li>
+    <li><a href="https://platform.claude.com/docs/en/agents-and-tools/tool-use/overview">Tool use</a></li>
+    <li><a href="https://platform.claude.com/docs/en/build-with-claude/structured-outputs">Structured outputs</a> · <a href="https://platform.claude.com/docs/en/build-with-claude/citations">Citations</a></li>
+    <li><a href="https://platform.claude.com/docs/en/build-with-claude/pdf-support">PDF support</a> · <a href="https://platform.claude.com/docs/en/build-with-claude/vision">Vision</a></li>
+    <li><a href="https://platform.claude.com/docs/en/agents-and-tools/agent-skills/overview">Agent Skills</a> · <a href="https://platform.claude.com/docs/en/build-with-claude/skills-guide">Skills guide (API)</a></li>
+    <li><a href="https://code.claude.com/docs/en/skills">Claude Code skills</a> · <a href="https://code.claude.com/docs/en/mcp">MCP no Claude Code</a></li>
+  </ul></div>
+  <div class="box docs"><h4>📘 Stack do curso</h4><ul>
+    <li><a href="https://docs.nestjs.com">Nest.js</a> · <a href="https://typeorm.io">TypeORM</a></li>
+    <li><a href="https://nextjs.org/docs">Next.js</a> · <a href="https://ui.shadcn.com">shadcn/ui</a></li>
+    <li><a href="https://playwright.dev">Playwright</a></li>
+    <li><a href="https://help.figma.com/hc/en-us/articles/32132100833559">Figma MCP server</a></li>
+    <li><a href="https://github.com/upstash/context7">Context7</a> · <a href="https://swagger.io/specification/">OpenAPI</a></li>
+    <li><a href="https://docs.langchain.com">LangChain</a></li>
+  </ul></div>
+  <div class="box videos"><h4>▶️ Vídeos</h4><ul>
+    <li><a href="https://www.youtube.com/results?search_query=figma+mcp+server+claude+code+design+to+code">Buscar: Figma MCP + Claude Code</a></li>
+    <li><a href="https://www.youtube.com/results?search_query=TDD+with+AI+coding+agent">Buscar: TDD com agentes de IA</a></li>
+    <li><a href="https://www.youtube.com/results?search_query=nestjs+typeorm+docker+tutorial+portugu%C3%AAs">Buscar: Nest.js + TypeORM + Docker (PT)</a></li>
+    <li><a href="https://www.youtube.com/results?search_query=RAG+langchain+tutorial+portugu%C3%AAs">Buscar: RAG com LangChain (PT)</a></li>
+    <li><a href="https://www.youtube.com/@LangChain">Canal LangChain</a></li>
+  </ul></div>
+  <div class="box courses"><h4>🎓 Cursos</h4><ul>
+    <li><a href="https://anthropic.skilljar.com/">Anthropic Academy</a> — Building with the Claude API, Agent Skills</li>
+    <li><a href="https://github.com/anthropics/claude-cookbooks">Claude Cookbooks</a> — tool use, RAG, extração</li>
+    <li><a href="https://www.deeplearning.ai/short-courses/langchain-for-llm-application-development/">LangChain for LLM Application Development</a></li>
+    <li><a href="https://huggingface.co/learn/llm-course">Hugging Face LLM Course</a></li>
+  </ul></div>
+</div>
+
+<h2 id="exercicios">Exercícios e quiz</h2>
+<details><summary>Projeto — mini e-commerce assistido por IA</summary>
+<p>Construa backend (Nest + Postgres + Docker) e frontend (Next + shadcn) para "pedidos com cancelamento", seguindo: PRD → spec → plano por fases → TDD → E2E. Adicione um assistente de suporte com tool use (<code>buscar_pedido</code>, <code>cancelar_pedido</code> com confirmação humana) e RAG sobre as FAQs.</p></details>
+
+<div class="quiz" data-answer="b">
+  <div class="q">1. Qual a função da <code>description</code> no frontmatter de uma skill?</div>
+  <button class="opt" data-opt="a">Documentar o autor</button>
+  <button class="opt" data-opt="b">Permitir que o modelo decida quando carregar a skill</button>
+  <button class="opt" data-opt="c">Definir permissões de arquivos</button>
+  <button class="opt" data-opt="d">Nada, é opcional e ignorada</button>
+  <div class="explain">Ela fica sempre no contexto e é o gatilho do progressive disclosure.</div>
+</div>
+<div class="quiz" data-answer="c">
+  <div class="q">2. No tool use, quem executa a função <code>buscar_pedido</code>?</div>
+  <button class="opt" data-opt="a">Os servidores da Anthropic</button>
+  <button class="opt" data-opt="b">O próprio modelo</button>
+  <button class="opt" data-opt="c">A sua aplicação, que devolve o resultado como tool_result</button>
+  <button class="opt" data-opt="d">O navegador do usuário</button>
+  <div class="explain">O modelo só pede a chamada (tool_use); a execução e a segurança ficam com você.</div>
+</div>
+<div class="quiz" data-answer="a">
+  <div class="q">3. Por que o Context7 MCP ajuda a reduzir erros do agente?</div>
+  <button class="opt" data-opt="a">Fornece documentação atual e específica da versão das bibliotecas</button>
+  <button class="opt" data-opt="b">Executa os testes automaticamente</button>
+  <button class="opt" data-opt="c">Aumenta a janela de contexto</button>
+  <button class="opt" data-opt="d">Gera design tokens</button>
+  <div class="explain">Evita APIs inventadas ou de versões antigas presentes no treinamento.</div>
+</div>
+
+</article>
+</main>
+</body>
+</html>

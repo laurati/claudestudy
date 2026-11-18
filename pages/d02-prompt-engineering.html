@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>02 · Prompt Engineering — ClaudeStudy</title>
+<link rel="stylesheet" href="../css/style.css">
+<script src="../js/site.js" defer></script>
+</head>
+<body data-root="..">
+<main>
+<article class="content">
+
+<span class="kicker">Disciplina 02</span>
+<h1>Prompt Engineering</h1>
+<p class="lead">Seus prompts são básicos e você sabe disso. Aqui você aprende técnicas, estruturas, templates, versionamento e — principalmente — como <em>medir</em> se um prompt é bom.</p>
+
+<div class="objectives">
+  <h4>Ao finalizar esta disciplina você será capaz de:</h4>
+  <ul>
+    <li>Ter até 5x mais produtividade</li>
+    <li>Gerar códigos de alta qualidade</li>
+    <li>Minimizar erros básicos cometidos pela IA</li>
+    <li>Criar assistentes para gerar docs de contexto para IA</li>
+    <li>Ter uma biblioteca de prompts para diferentes tipos de projetos</li>
+  </ul>
+</div>
+
+<!-- ============================================================ -->
+<h2 id="fundamentos">Fundamentos</h2>
+<h3>A importância do Prompt Engineering no desenvolvimento</h3>
+<p>Um LLM é como um colega brilhante que acabou de chegar na empresa: sabe muito, mas <strong>não conhece seu projeto, suas convenções nem o que você considera "pronto"</strong>. Prompt engineering é a disciplina de dar a esse colega as instruções, o contexto e os exemplos certos — e de iterar com base em testes.</p>
+<p>O teste de ouro da documentação do Claude: <em>se você mostrasse o prompt a um colega sem contexto, ele saberia exatamente o que fazer?</em> Se não, o modelo também não saberá.</p>
+<div class="example">
+  <h4>Exemplo: prompt genérico × prompt engenheirado</h4>
+<pre class="plain"><code>❌ "Crie testes para essa função."
+
+✅ "Você vai escrever testes unitários em Go (testing + testify) para a função
+   ParseInvoice em invoice.go.
+   Contexto: a função é usada no fluxo de faturamento; entradas vêm de um CSV
+   enviado por clientes e frequentemente têm campos vazios e datas em formatos
+   diferentes.
+   Requisitos:
+   - use table-driven tests;
+   - cubra caminho feliz, campos ausentes, datas inválidas e valores negativos;
+   - não altere invoice.go; se encontrar um bug, descreva-o ao final.
+   Formato: apenas o arquivo invoice_test.go completo."</code></pre>
+</div>
+<p>Os princípios básicos (todos detalhados em <a href="https://platform.claude.com/docs/en/build-with-claude/prompt-engineering/claude-prompting-best-practices">Prompting best practices</a>):</p>
+<ul>
+  <li><strong>Seja claro e direto</strong>: diga o objetivo, o público, o formato e o critério de sucesso.</li>
+  <li><strong>Explique o porquê</strong>: "não use reticências porque o texto será lido por um TTS" funciona melhor que "NUNCA use reticências".</li>
+  <li><strong>Dê exemplos</strong> (few-shot) quando o formato importa.</li>
+  <li><strong>Estruture com tags XML</strong> para separar instruções, contexto e dados.</li>
+  <li><strong>Deixe o modelo pensar</strong> em tarefas complexas.</li>
+</ul>
+
+<!-- ============================================================ -->
+<h2 id="tecnicas">Técnicas de Prompt e Raciocínio Estruturado</h2>
+
+<h3>Zero-shot e Few-shot Prompting</h3>
+<p><strong>Zero-shot</strong>: só a instrução, sem exemplos. Funciona para tarefas comuns. <strong>Few-shot</strong> (ou <em>multishot</em>): incluir de 3 a 5 exemplos de entrada → saída. É a forma mais confiável de fixar formato, tom e casos de borda. Os exemplos devem ser <em>relevantes</em>, <em>diversos</em> (cobrindo casos difíceis) e <em>claramente delimitados</em>.</p>
+<div class="example">
+  <h4>Exemplo: few-shot para classificar commits</h4>
+<pre class="plain"><code>Classifique a mensagem de commit em: feat, fix, refactor, docs, test, chore.
+
+&lt;exemplos&gt;
+&lt;exemplo&gt;&lt;entrada&gt;corrige NPE ao salvar usuário sem e-mail&lt;/entrada&gt;&lt;saida&gt;fix&lt;/saida&gt;&lt;/exemplo&gt;
+&lt;exemplo&gt;&lt;entrada&gt;extrai validação de CPF para pacote próprio&lt;/entrada&gt;&lt;saida&gt;refactor&lt;/saida&gt;&lt;/exemplo&gt;
+&lt;exemplo&gt;&lt;entrada&gt;adiciona endpoint de exportação em CSV&lt;/entrada&gt;&lt;saida&gt;feat&lt;/saida&gt;&lt;/exemplo&gt;
+&lt;/exemplos&gt;
+
+&lt;entrada&gt;{{MENSAGEM}}&lt;/entrada&gt;
+Responda apenas com a categoria.</code></pre>
+</div>
+
+<h3>Role Prompting</h3>
+<p>Atribuir um papel no <em>system prompt</em> ("Você é um engenheiro de SRE sênior revisando um runbook") ajusta vocabulário, nível de profundidade e prioridades. Funciona melhor quando o papel vem acompanhado de contexto concreto (empresa, público, restrições), não só de um título.</p>
+
+<h3>Chain of Thought (CoT) e Self-consistency</h3>
+<p><strong>CoT</strong>: pedir que o modelo raciocine passo a passo antes de responder melhora tarefas de lógica, matemática e análise (<a href="https://arxiv.org/abs/2201.11903">paper</a>). Versões: "pense passo a passo" (básica), passos guiados ("primeiro identifique X, depois…"), ou estruturada com tags <code>&lt;raciocinio&gt;</code> e <code>&lt;resposta&gt;</code> para separar e poder descartar o raciocínio.</p>
+<p><strong>Self-consistency</strong> (<a href="https://arxiv.org/abs/2203.11171">paper</a>): gerar várias cadeias de raciocínio independentes e escolher a resposta mais frequente (votação). Mais caro, porém mais robusto.</p>
+<div class="note"><strong>Modelos com "thinking":</strong> os modelos Claude atuais têm raciocínio interno (<a href="https://platform.claude.com/docs/en/build-with-claude/adaptive-thinking">adaptive thinking</a>) controlado pelo parâmetro <code>effort</code>. Nesses casos, você não precisa pedir "pense passo a passo" — mas guiar <em>o que</em> considerar continua útil.</div>
+
+<h3>Tree of Thought e Skeleton of Thought</h3>
+<ul>
+  <li><strong>Tree of Thought (ToT)</strong> (<a href="https://arxiv.org/abs/2305.10601">paper</a>): o modelo explora vários "ramos" de solução, avalia cada um e expande os promissores (busca em árvore). Útil em problemas com muitas alternativas — por exemplo, escolher entre três arquiteturas.</li>
+  <li><strong>Skeleton of Thought (SoT)</strong> (<a href="https://arxiv.org/abs/2307.15337">paper</a>): primeiro gera um esqueleto (tópicos), depois expande cada tópico — em paralelo, reduzindo latência. Ótimo para documentos longos.</li>
+</ul>
+<div class="example">
+  <h4>Exemplo: ToT "em um prompt" para decisão arquitetural</h4>
+<pre class="plain"><code>Problema: precisamos processar 2 mil webhooks/s de pagamentos com garantia de não perder eventos.
+1. Proponha 3 abordagens distintas.
+2. Para cada uma, avalie: confiabilidade, custo, complexidade operacional (nota 1–5 e justificativa).
+3. Descarte a pior e aprofunde as duas restantes com riscos e mitigação.
+4. Recomende uma e liste o que precisaria ser verdade para mudar de ideia.</code></pre>
+</div>
+
+<h3>ReAct (Reasoning + Acting)</h3>
+<p><strong>ReAct</strong> (<a href="https://arxiv.org/abs/2210.03629">paper</a>) intercala <em>Pensamento → Ação (chamar ferramenta) → Observação (resultado)</em> em loop até concluir. É o padrão conceitual por trás dos agentes modernos e do <a href="https://platform.claude.com/docs/en/agents-and-tools/tool-use/overview">tool use</a> do Claude.</p>
+<pre class="plain"><code>Pensamento: preciso saber a versão do Postgres em produção.
+Ação: run_sql("select version()")
+Observação: PostgreSQL 15.4
+Pensamento: o recurso MERGE existe desde a 15, posso usá-lo.
+Resposta: ...</code></pre>
+
+<h3>Análise de trade-offs entre as técnicas</h3>
+<div class="table-wrap">
+<table>
+  <tr><th>Técnica</th><th>Ganho</th><th>Custo</th><th>Quando usar</th></tr>
+  <tr><td>Zero-shot</td><td>Simples</td><td>Mínimo</td><td>Tarefas comuns, protótipos</td></tr>
+  <tr><td>Few-shot</td><td>Formato e consistência</td><td>Tokens de entrada (cacheáveis)</td><td>Saídas estruturadas, classificação</td></tr>
+  <tr><td>CoT</td><td>Precisão em raciocínio</td><td>Mais tokens de saída, latência</td><td>Lógica, análise, debugging</td></tr>
+  <tr><td>Self-consistency</td><td>Robustez</td><td>N× chamadas</td><td>Decisões críticas com resposta curta</td></tr>
+  <tr><td>ToT</td><td>Explora alternativas</td><td>Alto</td><td>Design, planejamento</td></tr>
+  <tr><td>SoT</td><td>Latência em textos longos</td><td>Pode perder coesão</td><td>Documentação, relatórios</td></tr>
+  <tr><td>ReAct</td><td>Acesso a dados reais</td><td>Várias idas e vindas</td><td>Agentes, consultas a sistemas</td></tr>
+</table>
+</div>
+
+<h3>Prompt Chaining com LangChain</h3>
+<p><strong>Prompt chaining</strong> é dividir uma tarefa complexa em uma sequência de prompts menores, onde a saída de um vira entrada do próximo (<a href="https://platform.claude.com/docs/en/build-with-claude/prompt-engineering/chain-prompts">Chain complex prompts</a>). Cada elo fica mais simples, testável e depurável.</p>
+<div class="example">
+  <h4>Exemplo: cadeia "extrair requisitos → gerar casos de teste" com LangChain</h4>
+<pre><code># pip install langchain-anthropic langchain-core
+from langchain_anthropic import ChatAnthropic
+from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.output_parsers import StrOutputParser
+
+llm = ChatAnthropic(model="claude-opus-5-5", max_tokens=4000)
+
+extrair = ChatPromptTemplate.from_template(
+    "Liste, em bullets, os requisitos funcionais da user story abaixo.\n\n{story}"
+)
+casos = ChatPromptTemplate.from_template(
+    "Para cada requisito, escreva casos de teste no formato Given/When/Then.\n\n{requisitos}"
+)
+
+chain = (
+    extrair | llm | StrOutputParser()
+    | (lambda req: {"requisitos": req})
+    | casos | llm | StrOutputParser()
+)
+
+print(chain.invoke({"story": "Como cliente, quero cancelar um pedido em até 24h..."}))</code></pre>
+</div>
+
+<!-- ============================================================ -->
+<h2 id="contexto">Janela de Contexto e Otimização</h2>
+
+<h3>Context Window vs memória</h3>
+<p>O LLM é <strong>sem estado</strong> (<em>stateless</em>): a cada chamada você reenvia tudo o que ele precisa saber. A "memória" de um chat é só a aplicação reenviando o histórico. Já a <strong>memória de longo prazo</strong> é algo que você implementa fora do modelo: arquivos (como o <code>CLAUDE.md</code> do Claude Code), um banco de dados, um banco vetorial ou a <a href="https://platform.claude.com/docs/en/agents-and-tools/tool-use/memory-tool">memory tool</a>, de onde se recupera o que for relevante para colocar na janela.</p>
+
+<h3>Custo e latência</h3>
+<ul>
+  <li>Você paga por <strong>tokens de entrada</strong> e <strong>de saída</strong> (saída costuma custar ~5× mais).</li>
+  <li>Latência ≈ tempo de prefill (proporcional à entrada) + tempo de decode (proporcional à saída).</li>
+  <li>Alavancas: prompt menor e mais focado, cache, modelo menor para subtarefas, limitar o tamanho da saída, streaming para latência percebida. Ver <a href="https://platform.claude.com/docs/en/about-claude/pricing">Pricing</a> e <a href="https://platform.claude.com/docs/en/test-and-evaluate/strengthen-guardrails/reduce-latency">Reduce latency</a>.</li>
+</ul>
+
+<h3>Truncamento, sumarização e sliding window</h3>
+<div class="table-wrap">
+<table>
+  <tr><th>Estratégia</th><th>Como</th><th>Risco</th></tr>
+  <tr><td>Truncamento</td><td>Corta o que excede (início ou meio)</td><td>Perde informação importante silenciosamente</td></tr>
+  <tr><td>Sliding window</td><td>Mantém só as últimas N mensagens</td><td>Esquece decisões antigas</td></tr>
+  <tr><td>Sumarização</td><td>Substitui o histórico antigo por um resumo</td><td>Resumo pode omitir detalhes; custa uma chamada</td></tr>
+  <tr><td>Híbrida</td><td>Resumo do antigo + janela recente + fatos fixos</td><td>Mais complexa, mas a mais usada em produção</td></tr>
+</table>
+</div>
+<p>A API do Claude oferece <a href="https://platform.claude.com/docs/en/build-with-claude/compaction">compaction</a> (sumarização automática no servidor) e <a href="https://platform.claude.com/docs/en/build-with-claude/context-editing">context editing</a> (remove resultados antigos de ferramentas).</p>
+
+<h3>Prompt Caching</h3>
+<p>Se várias requisições começam com o mesmo <strong>prefixo</strong> (system prompt longo, documentação, exemplos), o provedor pode guardar o processamento desse prefixo. Leituras do cache custam uma fração do preço normal e reduzem a latência. A regra de ouro: <strong>conteúdo estável primeiro, conteúdo variável depois</strong> — qualquer byte diferente no prefixo invalida o cache dali em diante.</p>
+<div class="example">
+  <h4>Exemplo: cache de um manual extenso no system prompt (Python)</h4>
+<pre><code>import anthropic
+
+client = anthropic.Anthropic()
+manual = open("manual_api_interna.md").read()  # ~50 mil tokens, raramente muda
+
+resp = client.messages.create(
+    model="claude-opus-5-5",
+    max_tokens=2000,
+    system=[
+        {"type": "text", "text": "Você responde dúvidas sobre a API interna."},
+        {"type": "text", "text": manual, "cache_control": {"type": "ephemeral"}},
+    ],
+    messages=[{"role": "user", "content": "Como paginar o endpoint /orders?"}],
+)
+
+# Na 2ª chamada com o mesmo prefixo, cache_read_input_tokens &gt; 0
+print(resp.usage.cache_creation_input_tokens, resp.usage.cache_read_input_tokens)</code></pre>
+</div>
+<div class="warning"><strong>Invalidadores silenciosos:</strong> colocar data/hora no system prompt, serializar JSON com chaves em ordem aleatória, mudar a lista de ferramentas a cada requisição.</div>
+
+<h3>Batch Prompting</h3>
+<p>Dois sentidos: (1) <strong>agrupar vários itens num mesmo prompt</strong> ("classifique estes 20 tickets") para economizar overhead; (2) usar uma <strong>API de lotes</strong> assíncrona. A <a href="https://platform.claude.com/docs/en/build-with-claude/batch-processing">Message Batches API</a> processa milhares de requisições em background com ~50% de desconto — perfeito para avaliações, migrações de dados e enriquecimento em massa, quando não há usuário esperando.</p>
+<div class="example">
+  <h4>Exemplo: Message Batches API</h4>
+<pre><code>tickets = {"t1": "App trava ao abrir", "t2": "Quero 2ª via do boleto"}
+
+batch = client.messages.batches.create(requests=[
+    {
+        "custom_id": tid,
+        "params": {
+            "model": "claude-opus-5-5",
+            "max_tokens": 50,
+            "messages": [{"role": "user", "content": f"Categoria (bug/financeiro/outro): {txt}"}],
+        },
+    }
+    for tid, txt in tickets.items()
+])
+
+# depois (poll até processing_status == "ended"):
+for r in client.messages.batches.results(batch.id):
+    if r.result.type == "succeeded":
+        print(r.custom_id, r.result.message.content[0].text)  # resultados vêm fora de ordem: use custom_id</code></pre>
+</div>
+
+<!-- ============================================================ -->
+<h2 id="estrutura">Estrutura básica de prompts</h2>
+
+<h3>Modularização de prompts para funções específicas</h3>
+<p>Em vez de um "prompt-monstro" que faz tudo, crie prompts <strong>pequenos e com uma responsabilidade</strong> (assim como funções): <code>classificar_intencao</code>, <code>extrair_entidades</code>, <code>redigir_resposta</code>. Cada um pode ser testado, versionado, cacheado e trocado de modelo de forma independente.</p>
+<p>Um prompt bem estruturado costuma ter estes blocos:</p>
+<pre class="plain"><code>1. Papel / contexto da tarefa       (quem é, para quem, por quê)
+2. Instruções e regras              (o que fazer, o que evitar e por quê)
+3. Exemplos                         (&lt;exemplos&gt;)
+4. Dados de entrada                 (&lt;documento&gt;, &lt;codigo&gt;, &lt;pergunta&gt;)
+5. Formato de saída                 (JSON, markdown, tags)
+6. Lembrete final da tarefa         (útil com contexto longo: pergunta no FIM)</code></pre>
+<div class="tip"><strong>Contexto longo:</strong> coloque documentos grandes no <em>topo</em> e a pergunta no <em>final</em> — isso melhora a qualidade (<a href="https://platform.claude.com/docs/en/build-with-claude/prompt-engineering/long-context-tips">Long context tips</a>).</div>
+
+<h3>Prompt templates dinâmicos (com variáveis de entrada)</h3>
+<p>Separe a parte fixa (instruções) da variável (dados do usuário) usando placeholders como <code>{{VARIAVEL}}</code>. Vantagens: consistência, reuso, cache do trecho fixo, e testes com datasets. Ver <a href="https://platform.claude.com/docs/en/build-with-claude/prompt-engineering/prompt-templates-and-variables">Prompt templates and variables</a>.</p>
+<div class="example">
+  <h4>Exemplo: template com Jinja2</h4>
+<pre><code>from jinja2 import Template
+
+REVIEW = Template("""Revise o diff abaixo seguindo o guia de estilo do time.
+&lt;guia&gt;{{ guia }}&lt;/guia&gt;
+&lt;diff linguagem="{{ linguagem }}"&gt;
+{{ diff }}
+&lt;/diff&gt;
+Liste problemas por severidade (alta/média/baixa) com arquivo:linha.""")
+
+prompt = REVIEW.render(guia=open("STYLE.md").read(), linguagem="go", diff=diff_text)</code></pre>
+</div>
+
+<h3>System vs User Prompt</h3>
+<div class="table-wrap">
+<table>
+  <tr><th>System prompt</th><th>User prompt (mensagens)</th></tr>
+  <tr><td>Definido pelo <em>desenvolvedor/operador</em></td><td>Conteúdo do <em>usuário</em> ou da tarefa atual</td></tr>
+  <tr><td>Papel, regras permanentes, tom, ferramentas, conhecimento fixo</td><td>A pergunta, os dados, o documento da vez</td></tr>
+  <tr><td>Estável → ótimo candidato a cache</td><td>Varia a cada requisição</td></tr>
+  <tr><td>Mais "autoridade": instruções de segurança devem ficar aqui</td><td>Não confiável: pode conter <em>prompt injection</em></td></tr>
+</table>
+</div>
+<p>Mais em <a href="https://platform.claude.com/docs/en/build-with-claude/prompt-engineering/system-prompts">Giving Claude a role with a system prompt</a>.</p>
+
+<h3>Guidelines e trade-offs</h3>
+<ul>
+  <li><strong>Específico × flexível:</strong> regras rígidas demais tornam o modelo literal e quebradiço; vagas demais geram respostas genéricas. Explique a intenção.</li>
+  <li><strong>Diga o que fazer, não só o que não fazer</strong> ("escreva em prosa corrida" &gt; "não use bullets").</li>
+  <li><strong>Prompts escritos para modelos antigos</strong> (MAIÚSCULAS, "CRITICAL!!!", ameaças) tendem a causar exagero em modelos atuais. Use tom normal.</li>
+  <li><strong>Prefill:</strong> técnica antiga de começar a resposta do assistente (ex.: <code>{</code>). Nos modelos Claude atuais ela não é suportada — use <a href="https://platform.claude.com/docs/en/build-with-claude/structured-outputs">structured outputs</a> para garantir JSON.</li>
+</ul>
+
+<!-- ============================================================ -->
+<h2 id="templates">Template de prompts para o dia a dia</h2>
+<p>Monte uma <strong>biblioteca pessoal/do time</strong> com templates para as situações recorrentes. Abaixo, esqueletos para cada categoria da grade:</p>
+
+<h3>Novas aplicações</h3>
+<pre class="plain"><code>Vou iniciar um projeto: {{DESCRICAO}}.
+Stack desejada: {{STACK}}. Restrições: {{RESTRICOES}}.
+Antes de escrever código:
+1. Faça até 10 perguntas sobre requisitos ambíguos.
+2. Proponha estrutura de pastas, módulos e principais entidades.
+3. Liste decisões arquiteturais com alternativas e trade-offs (formato ADR curto).
+Aguarde minha confirmação antes de gerar arquivos.</code></pre>
+
+<h3>Aplicações legadas</h3>
+<pre class="plain"><code>Analise o módulo em &lt;codigo&gt;. Ele é legado e tem pouca cobertura de testes.
+1. Explique o que ele faz (fluxo principal e efeitos colaterais).
+2. Liste code smells e riscos, citando linhas.
+3. Proponha um plano de refatoração incremental em passos pequenos, cada um
+   protegido por testes de caracterização escritos ANTES da mudança.
+Não altere comportamento observável.</code></pre>
+
+<h3>Documentação</h3>
+<pre class="plain"><code>Gere um README para o repositório a partir da árvore de arquivos e dos trechos
+fornecidos. Público: dev que vai contribuir pela primeira vez.
+Seções: visão geral, arquitetura (diagrama Mermaid), como rodar local, testes,
+convenções, troubleshooting. Não invente comandos que não estejam nos arquivos.</code></pre>
+
+<h3>Testes</h3>
+<pre class="plain"><code>Escreva testes para {{FUNCAO}} usando {{FRAMEWORK}}.
+Cubra: caminho feliz, caminho triste, edge cases (nulos, limites, unicode,
+concorrência se aplicável). Um teste = um comportamento. Nomes descritivos.
+Se um caso exigir mudar o código de produção, apenas aponte — não mude.</code></pre>
+
+<h3>Code Review e PRs</h3>
+<pre class="plain"><code>Você é revisor sênior. Revise o diff com foco em, nesta ordem:
+corretude &gt; segurança &gt; desempenho &gt; legibilidade.
+Para cada achado: severidade, arquivo:linha, problema, sugestão concreta.
+Ignore estilo que o linter já cobre. No fim, gere a descrição do PR
+(contexto, o que mudou, como testar, riscos).</code></pre>
+
+<h3>Mesa redonda com especialistas e brainstorming</h3>
+<p>Peça que o modelo simule um painel de especialistas com visões diferentes, que debatam e convirjam. Útil para expor pontos cegos.</p>
+<pre class="plain"><code>Simule uma mesa redonda sobre: "migrar nosso monolito Rails para microsserviços?"
+Participantes: (1) arquiteta de software, (2) SRE, (3) PM, (4) dev cético.
+Rodada 1: cada um dá sua posição com argumentos.
+Rodada 2: cada um rebate o argumento mais forte de outro participante.
+Síntese: pontos de consenso, divergências, e perguntas que precisamos responder com dados.</code></pre>
+
+<!-- ============================================================ -->
+<h2 id="agentes-workflows">Prompts para Agentes e Workflows</h2>
+
+<h3>Estruturas de prompts para execução de agentes</h3>
+<p>O system prompt de um agente funciona como um "manual de operação". Estrutura recomendada:</p>
+<pre class="plain"><code>&lt;papel&gt; Quem você é e qual o objetivo do agente &lt;/papel&gt;
+&lt;ambiente&gt; Onde você está, a que tem acesso, o que é irreversível &lt;/ambiente&gt;
+&lt;ferramentas&gt; Quando usar cada uma (e quando NÃO usar) &lt;/ferramentas&gt;
+&lt;processo&gt; Planeje → execute em passos pequenos → verifique → reporte &lt;/processo&gt;
+&lt;limites&gt; Peça confirmação antes de: deletar, publicar, gastar dinheiro &lt;/limites&gt;
+&lt;criterio_de_pronto&gt; Testes passando, lint limpo, resumo das mudanças &lt;/criterio_de_pronto&gt;</code></pre>
+<p>Também é prompt engineering a <strong>descrição das ferramentas</strong>: nomes claros, descrição do que fazem, parâmetros com exemplos e mensagens de erro úteis (<a href="https://www.anthropic.com/engineering/writing-tools-for-agents">Writing effective tools for agents</a>).</p>
+
+<h3>Prompts para análise de arquiteturas e componentes</h3>
+<pre class="plain"><code>Com base no código e nos diagramas fornecidos:
+1. Gere um diagrama C4 de containers em Mermaid.
+2. Para cada componente: responsabilidade, dependências de entrada/saída.
+3. Identifique acoplamentos problemáticos (ciclos, componentes "Deus").
+4. Avalie aderência aos atributos de qualidade: {{ATRIBUTOS}}.
+Diferencie FATOS observados no código de SUPOSIÇÕES.</code></pre>
+
+<h3>Workflow Specification e orquestração</h3>
+<p>Para fluxos com várias etapas, especifique o workflow de forma declarativa — etapas, entradas/saídas, condições de transição, critérios de verificação — e deixe o código (ou um orquestrador) executar. Padrões de orquestração descritos em <a href="https://www.anthropic.com/engineering/building-effective-agents">Building effective agents</a>: <em>prompt chaining</em>, <em>routing</em>, <em>parallelization</em>, <em>orchestrator-workers</em> e <em>evaluator-optimizer</em>.</p>
+<div class="example">
+  <h4>Exemplo: especificação de workflow em YAML</h4>
+<pre><code>workflow: triagem_de_incidente
+steps:
+  - id: classificar
+    prompt: prompts/classificar_alerta@v3
+    output: {severidade: [sev1, sev2, sev3], servico: string}
+  - id: coletar
+    when: "classificar.severidade in ['sev1','sev2']"
+    tools: [buscar_logs, buscar_metricas]
+  - id: resumir
+    prompt: prompts/resumo_incidente@v2
+    verify: "contém hipótese, impacto e próximo passo"
+  - id: notificar
+    requires_human_approval: true</code></pre>
+</div>
+
+<!-- ============================================================ -->
+<h2 id="versionamento">Gestão e Versionamento de Prompts</h2>
+
+<h3>Versionamento e controle de versão em equipe</h3>
+<p>Prompts são <strong>código</strong>: mudam o comportamento do sistema e precisam de revisão, histórico e rollback. Guarde-os no Git, versione semanticamente (mudança de formato de saída = major) e associe cada versão aos resultados de avaliação.</p>
+
+<h3>Documentação e categorização</h3>
+<p>Cada prompt deve ter: objetivo, dono, modelo-alvo, variáveis, formato de saída, exemplos, limitações conhecidas e link para o dataset de avaliação. Categorize por domínio (código, suporte, dados) e por tipo (classificação, extração, geração, agente).</p>
+
+<h3>Registry e estrutura de pastas (prompt.yaml)</h3>
+<div class="example">
+  <h4>Exemplo: estrutura de um registry de prompts</h4>
+<pre><code>prompts/
+├── code-review/
+│   ├── prompt.yaml
+│   ├── CHANGELOG.md
+│   └── evals/
+│       ├── dataset.jsonl
+│       └── criteria.md
+└── classificar-ticket/
+    └── prompt.yaml</code></pre>
+<pre><code># prompts/code-review/prompt.yaml
+name: code-review
+version: 2.1.0
+owner: time-plataforma
+model: claude-opus-5-5
+description: Revisa diffs priorizando corretude e segurança.
+variables:
+  - name: diff
+    required: true
+  - name: guia
+    required: false
+system: |
+  Você é um revisor de código sênior...
+template: |
+  &lt;guia&gt;{{guia}}&lt;/guia&gt;
+  &lt;diff&gt;{{diff}}&lt;/diff&gt;
+output_format: markdown
+eval:
+  dataset: evals/dataset.jsonl
+  min_score: 0.85</code></pre>
+</div>
+
+<h3>Testes automatizados de prompts</h3>
+<p>Rode o prompt contra um dataset a cada mudança (no CI) e falhe se a métrica cair abaixo do limiar. Combine checagens determinísticas (JSON válido? contém campo X? regex?) com avaliações por modelo.</p>
+<div class="example">
+  <h4>Exemplo: teste de prompt com pytest</h4>
+<pre><code>import json, pytest
+from meu_app.prompts import classificar_ticket   # função que chama o LLM
+
+CASOS = [json.loads(l) for l in open("prompts/classificar-ticket/evals/dataset.jsonl")]
+
+@pytest.mark.parametrize("caso", CASOS, ids=lambda c: c["id"])
+def test_classificacao(caso):
+    saida = classificar_ticket(caso["entrada"])
+    assert saida["categoria"] in {"bug", "financeiro", "outro"}   # formato
+    assert saida["categoria"] == caso["esperado"]                # corretude</code></pre>
+</div>
+
+<h3>LangSmith Prompt Hub</h3>
+<p>O <a href="https://docs.smith.langchain.com">LangSmith</a> oferece um <em>Prompt Hub</em> para armazenar, versionar (com commits e tags), comparar e testar prompts num playground, além de rodar avaliações sobre datasets e rastrear chamadas em produção. Alternativas: Langfuse, PromptLayer, ou um registry próprio no Git.</p>
+
+<!-- ============================================================ -->
+<h2 id="query-reformulation">Query Reformulation e Prompt Enrichment</h2>
+<p>Em sistemas de busca e RAG, a pergunta do usuário muitas vezes é curta, ambígua ou usa palavras diferentes das do documento. Reformular a consulta antes de buscar melhora muito a recuperação.</p>
+
+<h3>Reformulação e enriquecimento de queries</h3>
+<ul>
+  <li><strong>Reescrita:</strong> transformar "e o prazo?" (com histórico) em "qual o prazo de cancelamento de pedidos?".</li>
+  <li><strong>Expansão:</strong> adicionar sinônimos e termos técnicos.</li>
+  <li><strong>Decomposição:</strong> quebrar perguntas compostas em sub-perguntas.</li>
+  <li><strong>Multi-query:</strong> gerar várias versões e unir os resultados.</li>
+</ul>
+
+<h3>Query2Doc e HyDE</h3>
+<p><strong>HyDE — Hypothetical Document Embeddings</strong> (<a href="https://arxiv.org/abs/2212.10496">paper</a>): peça ao LLM para escrever um documento <em>hipotético</em> que responderia à pergunta, gere o embedding <em>dele</em> e busque documentos reais parecidos. Funciona porque "resposta se parece com resposta" mais do que "pergunta se parece com resposta".</p>
+<p><strong>Query2Doc</strong> (<a href="https://arxiv.org/abs/2303.07678">paper</a>): gera um pseudo-documento e o <em>concatena</em> à query original (útil especialmente em busca por palavras-chave como BM25).</p>
+<div class="example">
+  <h4>Exemplo: HyDE em poucas linhas</h4>
+<pre><code>def hyde_search(pergunta, llm, embed, vector_db, k=5):
+    hipotetico = llm(f"Escreva um parágrafo técnico que responda: {pergunta}")
+    return vector_db.search(embed(hipotetico), k=k)   # busca pelo vetor da "resposta"</code></pre>
+</div>
+
+<h3>ITER-RETGEN</h3>
+<p><strong>ITER-RETGEN</strong> (<a href="https://arxiv.org/abs/2305.15294">paper</a>) alterna recuperação e geração em iterações: gera uma resposta parcial, usa essa resposta para fazer uma nova busca (que encontra informações que a pergunta original não alcançava), gera de novo… Útil para perguntas de múltiplos saltos ("qual linguagem usa o framework criado pela empresa X?").</p>
+
+<!-- ============================================================ -->
+<h2 id="evaluation">Prompt Evaluation</h2>
+
+<h3>Objetivos, métricas e tipos de avaliação</h3>
+<p>Antes de otimizar, defina <strong>critérios de sucesso</strong> específicos e mensuráveis (<a href="https://platform.claude.com/docs/en/test-and-evaluate/define-success">Define success criteria</a>): "classificar corretamente ≥ 95% dos tickets", "respostas com menos de 150 palavras", "0 vazamentos de dados pessoais".</p>
+<div class="table-wrap">
+<table>
+  <tr><th>Tipo de avaliação</th><th>Como funciona</th><th>Bom para</th></tr>
+  <tr><td>Correspondência exata / regex</td><td>Compara com o esperado</td><td>Classificação, extração</td></tr>
+  <tr><td>Checagem de esquema</td><td>Valida JSON / campos</td><td>Saídas estruturadas</td></tr>
+  <tr><td>Execução</td><td>Roda o código gerado / testes</td><td>Geração de código</td></tr>
+  <tr><td>Similaridade (embeddings, ROUGE)</td><td>Distância a uma resposta de referência</td><td>Resumo, paráfrase</td></tr>
+  <tr><td>LLM-as-judge</td><td>Outro modelo avalia com uma rubrica</td><td>Qualidade subjetiva, tom</td></tr>
+  <tr><td>Humana</td><td>Especialistas avaliam</td><td>Calibrar as demais; casos críticos</td></tr>
+</table>
+</div>
+
+<h3>Evaluators e Datasets</h3>
+<p><strong>Dataset</strong>: conjunto de entradas (e, quando possível, saídas esperadas) que representa o uso real — inclua casos típicos, de borda e adversariais. <strong>Evaluator</strong>: a função que dá nota a cada saída. Comece com 20–50 casos bem escolhidos e cresça a partir de falhas reais de produção. Ver <a href="https://platform.claude.com/docs/en/test-and-evaluate/develop-tests">Create strong empirical evaluations</a> e a <a href="https://platform.claude.com/docs/en/test-and-evaluate/eval-tool">ferramenta de avaliação do Console</a>.</p>
+
+<h3>Embedding distance e critérios adicionais</h3>
+<p><strong>Embedding distance</strong>: gera embeddings da resposta e da referência e mede a similaridade de cosseno — tolerante a paráfrases, mas não detecta erros sutis de fato ("aceita" vs "não aceita" podem ficar próximos). Por isso, combine com critérios adicionais: tamanho, presença de citações, ausência de PII, latência, custo.</p>
+
+<!-- ============================================================ -->
+<h2 id="evaluation-comparativa">Evaluation Comparativa</h2>
+
+<h3>Precision, Recall e F1</h3>
+<p>Para tarefas de classificação/extração (ex.: "o prompt detecta tickets de fraude?"):</p>
+<pre class="plain"><code>Precision = VP / (VP + FP)   → dos que marquei como fraude, quantos eram?
+Recall    = VP / (VP + FN)   → das fraudes reais, quantas encontrei?
+F1        = 2 · P · R / (P + R)   → média harmônica (equilíbrio)
+
+Ex.: 100 tickets, 10 fraudes reais. O prompt marcou 12; 8 eram fraude.
+VP=8, FP=4, FN=2 → Precision=0.67, Recall=0.80, F1≈0.73</code></pre>
+<p>Escolha a métrica conforme o custo do erro: em detecção de fraude, recall alto costuma importar mais; em alertas que acordam alguém de madrugada, precision.</p>
+
+<h3>Pairwise Evaluation</h3>
+<p>Em vez de dar nota absoluta, mostre <strong>duas respostas</strong> (prompt A × prompt B) para a mesma entrada e pergunte qual é melhor. É mais estável que notas de 1 a 10. Cuidado com o <em>viés de posição</em>: avalie também com a ordem invertida.</p>
+
+<h3>LLM-as-Judge</h3>
+<p>Use um modelo (de preferência forte) para avaliar saídas segundo uma <strong>rubrica explícita</strong>. Boas práticas: critérios objetivos, pedir raciocínio antes da nota, escala pequena (ex.: passa/não passa ou 1–5), e calibrar contra avaliações humanas.</p>
+<div class="example">
+  <h4>Exemplo: juiz com saída estruturada</h4>
+<pre><code>from pydantic import BaseModel
+import anthropic
+
+class Veredito(BaseModel):
+    raciocinio: str
+    fiel_ao_contexto: bool
+    responde_a_pergunta: bool
+    nota: int  # 1 a 5
+
+client = anthropic.Anthropic()
+
+def julgar(pergunta, contexto, resposta) -&gt; Veredito:
+    r = client.messages.parse(
+        model="claude-opus-5-5",
+        max_tokens=2000,
+        system="Você é um avaliador rigoroso de respostas de um sistema RAG.",
+        messages=[{"role": "user", "content": f"""
+&lt;pergunta&gt;{pergunta}&lt;/pergunta&gt;
+&lt;contexto&gt;{contexto}&lt;/contexto&gt;
+&lt;resposta&gt;{resposta}&lt;/resposta&gt;
+Rubrica: fiel = toda afirmação é suportada pelo contexto;
+responde = trata diretamente a pergunta. Raciocine e depois dê a nota."""}],
+        output_format=Veredito,
+    )
+    return r.parsed_output</code></pre>
+</div>
+
+<!-- ============================================================ -->
+<h2 id="recursos">Recursos para aprofundar</h2>
+<div class="resources">
+  <div class="box docs"><h4>📘 Documentação do Claude</h4><ul>
+    <li><a href="https://platform.claude.com/docs/en/build-with-claude/prompt-engineering/overview">Prompt engineering overview</a></li>
+    <li><a href="https://platform.claude.com/docs/en/build-with-claude/prompt-engineering/claude-prompting-best-practices">Prompting best practices</a></li>
+    <li><a href="https://platform.claude.com/docs/en/build-with-claude/prompt-engineering/be-clear-and-direct">Be clear and direct</a></li>
+    <li><a href="https://platform.claude.com/docs/en/build-with-claude/prompt-engineering/multishot-prompting">Multishot prompting</a></li>
+    <li><a href="https://platform.claude.com/docs/en/build-with-claude/prompt-engineering/chain-of-thought">Chain of thought</a></li>
+    <li><a href="https://platform.claude.com/docs/en/build-with-claude/prompt-engineering/use-xml-tags">Use XML tags</a></li>
+    <li><a href="https://platform.claude.com/docs/en/build-with-claude/prompt-engineering/prompt-generator">Prompt generator</a></li>
+    <li><a href="https://platform.claude.com/docs/en/build-with-claude/prompt-caching">Prompt caching</a> · <a href="https://platform.claude.com/docs/en/build-with-claude/batch-processing">Batch processing</a></li>
+    <li><a href="https://platform.claude.com/docs/en/test-and-evaluate/develop-tests">Develop tests (evals)</a></li>
+  </ul></div>
+  <div class="box videos"><h4>▶️ Vídeos</h4><ul>
+    <li><a href="https://www.youtube.com/@anthropic-ai">Canal oficial da Anthropic</a> — inclui o painel "AI prompt engineering: a deep dive"</li>
+    <li><a href="https://www.youtube.com/results?search_query=anthropic+prompt+engineering+deep+dive">Buscar: Anthropic prompt engineering deep dive</a></li>
+    <li><a href="https://www.youtube.com/results?search_query=prompt+engineering+para+desenvolvedores+portugu%C3%AAs">Buscar: prompt engineering para devs (PT-BR)</a></li>
+    <li><a href="https://www.youtube.com/results?search_query=LLM+as+a+judge+evaluation+tutorial">Buscar: LLM-as-a-judge tutorial</a></li>
+  </ul></div>
+  <div class="box courses"><h4>🎓 Cursos</h4><ul>
+    <li><a href="https://github.com/anthropics/prompt-eng-interactive-tutorial">Prompt Engineering Interactive Tutorial</a> — Anthropic (gratuito, Jupyter)</li>
+    <li><a href="https://github.com/anthropics/courses">Anthropic Courses</a> — inclui "Prompt evaluations" e "Real world prompting"</li>
+    <li><a href="https://www.deeplearning.ai/short-courses/chatgpt-prompt-engineering-for-developers/">Prompt Engineering for Developers</a> — DeepLearning.AI</li>
+    <li><a href="https://www.deeplearning.ai/short-courses/building-systems-with-chatgpt/">Building Systems with LLM APIs</a> — DeepLearning.AI</li>
+    <li><a href="https://www.promptingguide.ai/pt">Prompt Engineering Guide (PT)</a></li>
+  </ul></div>
+  <div class="box reading"><h4>📄 Papers</h4><ul>
+    <li><a href="https://arxiv.org/abs/2201.11903">Chain-of-Thought</a> · <a href="https://arxiv.org/abs/2203.11171">Self-consistency</a></li>
+    <li><a href="https://arxiv.org/abs/2305.10601">Tree of Thoughts</a> · <a href="https://arxiv.org/abs/2307.15337">Skeleton of Thought</a></li>
+    <li><a href="https://arxiv.org/abs/2210.03629">ReAct</a></li>
+    <li><a href="https://arxiv.org/abs/2212.10496">HyDE</a> · <a href="https://arxiv.org/abs/2303.07678">Query2Doc</a> · <a href="https://arxiv.org/abs/2305.15294">ITER-RETGEN</a></li>
+  </ul></div>
+</div>
+
+<h2 id="exercicios">Exercícios e quiz</h2>
+<details><summary>Exercício — monte sua biblioteca de prompts</summary>
+<p>Crie um repositório <code>prompts/</code> com 5 templates (novo projeto, legado, testes, code review, documentação) no formato <code>prompt.yaml</code>. Para o de code review, monte um dataset com 10 diffs (5 com bugs plantados) e meça o recall de bugs encontrados. Itere até ≥ 80%.</p></details>
+
+<div class="quiz" data-answer="d">
+  <div class="q">1. Seu prompt classifica corretamente, mas o formato de saída varia muito. Primeira técnica a tentar?</div>
+  <button class="opt" data-opt="a">Tree of Thought</button>
+  <button class="opt" data-opt="b">Aumentar a janela de contexto</button>
+  <button class="opt" data-opt="c">Self-consistency com 5 amostras</button>
+  <button class="opt" data-opt="d">Few-shot com exemplos no formato desejado (ou structured outputs)</button>
+  <div class="explain">Exemplos fixam formato; structured outputs garantem o esquema.</div>
+</div>
+<div class="quiz" data-answer="b">
+  <div class="q">2. Onde colocar a data atual para não quebrar o prompt caching?</div>
+  <button class="opt" data-opt="a">No início do system prompt</button>
+  <button class="opt" data-opt="b">Depois do último ponto de cache, junto com o conteúdo variável</button>
+  <button class="opt" data-opt="c">Em todas as mensagens</button>
+  <button class="opt" data-opt="d">Tanto faz</button>
+  <div class="explain">O cache é por prefixo: conteúdo volátil deve vir depois do conteúdo estável.</div>
+</div>
+<div class="quiz" data-answer="a">
+  <div class="q">3. HyDE melhora a busca porque…</div>
+  <button class="opt" data-opt="a">O embedding de uma resposta hipotética é mais parecido com os documentos reais do que o da pergunta</button>
+  <button class="opt" data-opt="b">Elimina a necessidade de banco vetorial</button>
+  <button class="opt" data-opt="c">Faz fine-tuning do modelo de embeddings</button>
+  <button class="opt" data-opt="d">Reduz o número de tokens do prompt</button>
+  <div class="explain">"Resposta se parece com resposta": buscar com a hipótese aproxima o vetor dos documentos relevantes.</div>
+</div>
+
+</article>
+</main>
+</body>
+</html>

@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>09 · Protocolos de comunicação — ClaudeStudy</title>
+<link rel="stylesheet" href="../css/style.css">
+<script src="../js/site.js" defer></script>
+</head>
+<body data-root="..">
+<main>
+<article class="content">
+
+<span class="kicker">Disciplina 09</span>
+<h1>Protocolos de comunicação: MCP e A2A</h1>
+<p class="lead">Não adianta ter agente, modelo e ferramenta se eles não se integram. MCP conecta a IA a dados e ferramentas; A2A conecta agentes a outros agentes — mesmo de tecnologias diferentes.</p>
+
+<div class="objectives">
+  <h4>Ao finalizar esta disciplina você será capaz de:</h4>
+  <ul>
+    <li>Garantir comunicação entre agentes e sistemas com tecnologias diferentes</li>
+    <li>Conectar a IA a dados e ferramentas externas com eficiência</li>
+    <li>Criar servidores MCP como parte do seu ambiente de desenvolvimento</li>
+    <li>Integrar agentes, APIs e sistemas sem limitações de tecnologia</li>
+    <li>Criar aplicações prontas para ecossistemas com múltiplos agentes</li>
+  </ul>
+</div>
+
+<div class="diagram">                ┌──────────── A2A ────────────┐
+   Agente A  ◄──────────────────────────────►  Agente B        (agente ↔ agente)
+   (ADK)                                        (LangGraph)
+     │ MCP                                         │ MCP
+     ▼                                             ▼
+ [GitHub] [Postgres] [Figma]                  [CRM] [Arquivos]  (agente → ferramentas/dados)</div>
+
+<!-- ============================================================ -->
+<h2 id="tool-calling">Protocolos de comunicação × Tool Calling</h2>
+<p><strong>Tool calling</strong> (function calling) é um recurso do <em>modelo/API</em>: você descreve funções no request e o modelo pede para chamá-las. Mas cada aplicação precisa implementar cada integração do zero — N aplicações × M ferramentas = N×M integrações.</p>
+<p>Um <strong>protocolo</strong> padroniza a conversa entre aplicações de IA e provedores de capacidades. Com MCP, quem escreve um servidor (ex.: GitHub) o faz uma vez, e qualquer cliente compatível (Claude, Cursor, Copilot, ADK…) pode usá-lo: N + M em vez de N×M.</p>
+<div class="table-wrap">
+<table>
+  <tr><th></th><th>Tool calling</th><th>MCP</th></tr>
+  <tr><td>Nível</td><td>Formato de request/response de uma API de LLM</td><td>Protocolo cliente-servidor (JSON-RPC 2.0)</td></tr>
+  <tr><td>Onde a ferramenta vive</td><td>No código da sua aplicação</td><td>Num servidor reutilizável (local ou remoto)</td></tr>
+  <tr><td>Descoberta</td><td>Estática (você lista no request)</td><td>Dinâmica (<code>tools/list</code>, notificações de mudança)</td></tr>
+  <tr><td>Além de ferramentas</td><td>Não</td><td>Resources, prompts, sampling, elicitation</td></tr>
+</table>
+</div>
+<p>MCP <em>usa</em> tool calling por baixo: o cliente converte as tools do servidor em definições de tool para o modelo.</p>
+
+<!-- ============================================================ -->
+<h2 id="mcp-fundamentos">Fundamentos do MCP (Tools, Resources e Prompts)</h2>
+<p>O <a href="https://modelcontextprotocol.io">Model Context Protocol</a> foi criado pela Anthropic (2024) e hoje é um padrão aberto adotado amplamente. Papéis:</p>
+<ul>
+  <li><strong>Host</strong>: a aplicação de IA (Claude Desktop, Claude Code, IDE).</li>
+  <li><strong>Client</strong>: o conector dentro do host que mantém uma conexão 1:1 com um servidor.</li>
+  <li><strong>Server</strong>: expõe capacidades.</li>
+</ul>
+<div class="table-wrap">
+<table>
+  <tr><th>Primitiva</th><th>Quem controla</th><th>O que é</th><th>Exemplo</th></tr>
+  <tr><td><strong>Tools</strong></td><td>O <em>modelo</em> decide chamar</td><td>Funções que executam ações ou consultas</td><td><code>criar_issue</code>, <code>executar_query</code></td></tr>
+  <tr><td><strong>Resources</strong></td><td>A <em>aplicação/usuário</em> escolhe incluir</td><td>Dados para contexto, identificados por URI</td><td><code>file:///docs/api.md</code>, <code>db://schema/orders</code></td></tr>
+  <tr><td><strong>Prompts</strong></td><td>O <em>usuário</em> invoca</td><td>Templates de interação reutilizáveis</td><td>"/revisar-pr", "/analisar-incidente"</td></tr>
+</table>
+</div>
+<p>Primitivas do lado do cliente: <strong>sampling</strong> (o servidor pede ao cliente uma geração de LLM), <strong>roots</strong> (escopo de diretórios) e <strong>elicitation</strong> (o servidor pede informação ao usuário).</p>
+<div class="example">
+  <h4>Exemplo: mensagens JSON-RPC (simplificadas)</h4>
+<pre><code>// cliente → servidor: quais ferramentas você tem?
+{"jsonrpc": "2.0", "id": 1, "method": "tools/list"}
+
+// servidor → cliente
+{"jsonrpc": "2.0", "id": 1, "result": {"tools": [{
+  "name": "buscar_pedido",
+  "description": "Busca um pedido pelo ID",
+  "inputSchema": {"type": "object", "properties": {"pedido_id": {"type": "string"}}, "required": ["pedido_id"]}
+}]}}
+
+// cliente → servidor: o modelo decidiu chamar
+{"jsonrpc": "2.0", "id": 2, "method": "tools/call",
+ "params": {"name": "buscar_pedido", "arguments": {"pedido_id": "PED-123"}}}</code></pre>
+</div>
+<h3>Transportes</h3>
+<ul>
+  <li><strong>stdio</strong>: servidor local como subprocesso. Simples e seguro para ferramentas na máquina do dev.</li>
+  <li><strong>Streamable HTTP</strong>: servidor remoto via HTTP, com streaming opcional (SSE) e autorização OAuth 2.1. Para servidores compartilhados/SaaS.</li>
+</ul>
+
+<!-- ============================================================ -->
+<h2 id="mcp-servidores">Servidores MCP e Docker MCP Toolkit</h2>
+<p>Há milhares de servidores prontos: sistemas de arquivos, Git/GitHub, bancos (Postgres, SQLite), navegadores (Playwright), Slack, Notion, Figma, Sentry, Stripe, documentação (Context7)… Consulte o registro oficial no site do MCP e o <a href="https://docs.docker.com/ai/mcp-catalog-and-toolkit/">Docker MCP Catalog</a>.</p>
+<p>O <strong>Docker MCP Toolkit</strong> (no Docker Desktop) roda servidores como containers isolados, gerencia segredos e expõe tudo por um <em>gateway</em> único ao qual você conecta seus clientes — menos configuração e mais isolamento do que rodar <code>npx</code> de pacotes diretamente na máquina.</p>
+
+<!-- ============================================================ -->
+<h2 id="mcp-pratica">MCPs na prática, incluindo Resources e Prompts</h2>
+<div class="example">
+  <h4>Exemplo: configurando servidores no Claude Code</h4>
+<pre><code># stdio
+claude mcp add github -- docker run -i --rm -e GITHUB_PERSONAL_ACCESS_TOKEN ghcr.io/github/github-mcp-server
+# HTTP remoto
+claude mcp add --transport http sentry https://mcp.sentry.dev/mcp
+
+# dentro da sessão:
+#   /mcp                         → status e autenticação dos servidores
+#   @servidor:recurso            → referencia um RESOURCE como contexto
+#   /mcp__servidor__prompt       → executa um PROMPT do servidor</code></pre>
+</div>
+<p>Ver <a href="https://code.claude.com/docs/en/mcp">Connect Claude Code to tools via MCP</a>.</p>
+<h3>Usando MCP direto pela API do Claude</h3>
+<p>O <a href="https://platform.claude.com/docs/en/agents-and-tools/mcp-connector">MCP connector</a> permite que a própria API do Claude se conecte a servidores MCP remotos, sem você implementar um cliente MCP.</p>
+<div class="example">
+  <h4>Exemplo: MCP connector (Python)</h4>
+<pre><code>import anthropic
+client = anthropic.Anthropic()
+
+resp = client.beta.messages.create(
+    model="claude-opus-5-5",
+    max_tokens=2000,
+    betas=["mcp-client-2025-11-20"],
+    mcp_servers=[{"type": "url", "url": "https://mcp.exemplo.com/mcp", "name": "pedidos"}],
+    tools=[{"type": "mcp_toolset", "mcp_server_name": "pedidos"}],   # as duas partes são necessárias
+    messages=[{"role": "user", "content": "Qual o status do pedido PED-123?"}],
+)</code></pre>
+</div>
+
+<!-- ============================================================ -->
+<h2 id="mcp-desenvolvimento">Desenvolvimento de servidores MCP</h2>
+<p>SDKs oficiais existem para Python, TypeScript, Go, Java, C#, Kotlin e outras. Em Python, o <strong>FastMCP</strong> (incluído no SDK) transforma funções decoradas em primitivas.</p>
+<div class="example">
+  <h4>Exemplo: servidor MCP com tools, resources e prompts (Python)</h4>
+<pre><code># pip install "mcp[cli]"
+from mcp.server.fastmcp import FastMCP
+
+mcp = FastMCP("pedidos")
+
+PEDIDOS = {"PED-123": {"status": "ENVIADO", "itens": ["notebook"], "cliente": "Ana"}}
+
+@mcp.tool()
+def buscar_pedido(pedido_id: str) -&gt; dict:
+    """Busca status e itens de um pedido pelo ID (formato PED-123)."""
+    if pedido_id not in PEDIDOS:
+        return {"erro": f"Pedido {pedido_id} não existe. Verifique o formato PED-NNN."}
+    return PEDIDOS[pedido_id]
+
+@mcp.resource("pedidos://politica-cancelamento")
+def politica() -&gt; str:
+    """Política de cancelamento vigente."""
+    return "Pedidos PAGOS podem ser cancelados em até 24h. Pedidos ENVIADOS não."
+
+@mcp.prompt()
+def analisar_reclamacao(texto: str) -&gt; str:
+    """Template para analisar reclamações de clientes."""
+    return f"Analise a reclamação, identifique o pedido, consulte-o e proponha uma resposta:\n\n{texto}"
+
+if __name__ == "__main__":
+    mcp.run()                                  # stdio (padrão)
+    # mcp.run(transport="streamable-http")     # servidor HTTP</code></pre>
+<pre><code># testar com o MCP Inspector (interface para chamar tools/resources/prompts)
+mcp dev servidor.py
+
+# registrar no Claude Code
+claude mcp add pedidos -- python servidor.py</code></pre>
+</div>
+<div class="tip"><strong>Boas práticas</strong>: descrições excelentes (são o "prompt" da tool); validação de entrada; erros acionáveis; respostas enxutas; paginação; permissões mínimas; logs no <em>stderr</em> (no stdio, o stdout é o canal do protocolo!); autenticação OAuth em servidores remotos.</div>
+
+<!-- ============================================================ -->
+<h2 id="mcp-deploy">Deploy e distribuição utilizando Docker</h2>
+<div class="example">
+  <h4>Exemplo: Dockerfile para o servidor</h4>
+<pre><code>FROM python:3.12-slim
+WORKDIR /app
+RUN pip install --no-cache-dir "mcp[cli]"
+COPY servidor.py .
+RUN useradd -m mcp
+USER mcp
+ENTRYPOINT ["python", "servidor.py"]</code></pre>
+<pre><code>docker build -t minhaorg/mcp-pedidos:1.0 .
+# uso via stdio por qualquer cliente:
+claude mcp add pedidos -- docker run -i --rm minhaorg/mcp-pedidos:1.0</code></pre>
+</div>
+<p>Distribuição: publique a imagem num registry (Docker Hub, GHCR), versione semanticamente, documente variáveis de ambiente e permissões. Para servidores remotos, implante como serviço HTTP (Cloud Run, Kubernetes) atrás de autenticação.</p>
+<div class="warning"><strong>Segurança MCP</strong>: servidores podem ser maliciosos (exfiltração, descrições de tool com instruções escondidas — "tool poisoning") ou ser vetor de prompt injection (dados que retornam). Use fontes confiáveis, fixe versões, isole em containers, conceda o mínimo de credenciais e revise as permissões pedidas.</div>
+
+<!-- ============================================================ -->
+<h2 id="a2a-fundamentos">Google A2A (Agent to Agent): fundamentos</h2>
+<p>O <a href="https://a2a-protocol.org">A2A</a> é um protocolo aberto (iniciado pelo Google em 2025, hoje sob a Linux Foundation) para que agentes <strong>opacos</strong> — construídos com frameworks e fornecedores diferentes, sem expor sua lógica interna, memória ou ferramentas — colaborem como pares. Baseado em padrões web: HTTP, JSON-RPC 2.0 e SSE para streaming (com variantes gRPC/REST nas versões mais novas), além de push notifications via webhook para tarefas longas.</p>
+<div class="table-wrap">
+<table>
+  <tr><th></th><th>MCP</th><th>A2A</th></tr>
+  <tr><td>Conecta</td><td>Agente → ferramentas e dados</td><td>Agente ↔ agente</td></tr>
+  <tr><td>Contraparte</td><td>Funções com esquema (previsíveis)</td><td>Agente autônomo (pode negociar, pedir mais informação, demorar)</td></tr>
+  <tr><td>Unidade de trabalho</td><td>Chamada de tool</td><td>Task com ciclo de vida</td></tr>
+</table>
+</div>
+
+<!-- ============================================================ -->
+<h2 id="a2a-conceitos">Tasks, Messages, Parts, Agent Cards e Artifacts</h2>
+<ul>
+  <li><strong>Agent Card</strong>: "cartão de visitas" JSON do agente remoto — nome, descrição, URL, capacidades (streaming, push), habilidades (<em>skills</em>), formatos aceitos e esquema de autenticação.</li>
+  <li><strong>Task</strong>: unidade de trabalho com ID e estado; pode durar segundos ou dias.</li>
+  <li><strong>Message</strong>: um turno de comunicação (<code>role</code>: <code>user</code> ou <code>agent</code>) composto de Parts.</li>
+  <li><strong>Part</strong>: pedaço de conteúdo tipado — texto, arquivo ou dados estruturados.</li>
+  <li><strong>Artifact</strong>: resultado/produto gerado pela task (relatório, imagem, JSON), também composto de Parts.</li>
+</ul>
+
+<!-- ============================================================ -->
+<h2 id="a2a-fluxo">Arquitetura e fluxo de comunicação A2A</h2>
+<div class="diagram">Cliente A2A (agente orquestrador)                 Servidor A2A (agente remoto)
+  1. GET /.well-known/agent.json  ──────────────►   devolve Agent Card
+  2. escolhe skill adequada
+  3. message/send  (ou message/stream) ──────────►   cria Task (submitted → working)
+                         ◄────────── status updates (SSE) / artifacts parciais
+  4. se input-required: envia nova Message na mesma Task
+                         ◄────────── Task completed + Artifacts</div>
+<div class="example">
+  <h4>Exemplo: requisição JSON-RPC message/send (simplificada)</h4>
+<pre><code>POST https://agente-viagens.exemplo.com/a2a
+{
+  "jsonrpc": "2.0",
+  "id": "req-1",
+  "method": "message/send",
+  "params": {
+    "message": {
+      "role": "user",
+      "messageId": "msg-1",
+      "parts": [{ "kind": "text", "text": "Reserve hotel em Lisboa de 10 a 14/12, até 150€/noite" }]
+    }
+  }
+}</code></pre>
+</div>
+
+<!-- ============================================================ -->
+<h2 id="a2a-task">Estrutura de uma Task e estados possíveis</h2>
+<div class="example">
+  <h4>Exemplo: Task concluída (simplificada)</h4>
+<pre><code>{
+  "id": "task-789",
+  "contextId": "ctx-42",
+  "status": { "state": "completed", "timestamp": "2026-11-18T14:03:00Z" },
+  "history": [ /* mensagens trocadas */ ],
+  "artifacts": [{
+    "artifactId": "art-1",
+    "name": "reserva",
+    "parts": [{ "kind": "data", "data": { "hotel": "Hotel Alfama", "total": 560, "moeda": "EUR" } }]
+  }]
+}</code></pre>
+</div>
+<div class="table-wrap">
+<table>
+  <tr><th>Estado</th><th>Significado</th></tr>
+  <tr><td><code>submitted</code></td><td>Recebida, ainda não iniciada</td></tr>
+  <tr><td><code>working</code></td><td>Em processamento</td></tr>
+  <tr><td><code>input-required</code></td><td>O agente remoto precisa de mais informação do cliente</td></tr>
+  <tr><td><code>auth-required</code></td><td>Precisa de autenticação/autorização adicional</td></tr>
+  <tr><td><code>completed</code></td><td>Concluída com sucesso (terminal)</td></tr>
+  <tr><td><code>failed</code></td><td>Falhou (terminal)</td></tr>
+  <tr><td><code>canceled</code></td><td>Cancelada (terminal)</td></tr>
+  <tr><td><code>rejected</code></td><td>O agente recusou a tarefa (terminal)</td></tr>
+</table>
+</div>
+
+<!-- ============================================================ -->
+<h2 id="a2a-parts">Tipos de mensagens e partes (text, file, json)</h2>
+<pre><code>{ "kind": "text", "text": "Resumo da análise..." }
+
+{ "kind": "file", "file": { "name": "contrato.pdf", "mimeType": "application/pdf",
+                            "uri": "https://.../contrato.pdf" } }      // ou "bytes" em base64
+
+{ "kind": "data", "data": { "cpf_valido": true, "score": 712 } }        // JSON estruturado</code></pre>
+<p>A negociação de formatos acontece pelo Agent Card (<code>defaultInputModes</code>/<code>defaultOutputModes</code>, por exemplo <code>text/plain</code>, <code>application/json</code>), permitindo que agentes se adaptem ao que o outro suporta — inclusive UI e mídia.</p>
+
+<!-- ============================================================ -->
+<h2 id="a2a-descoberta">Descoberta de agentes (agent.json)</h2>
+<p>Por convenção, o Agent Card é publicado num caminho bem conhecido do domínio do agente: <code>/.well-known/agent.json</code> (nas versões mais recentes da especificação, <code>/.well-known/agent-card.json</code>). Também é possível descobrir agentes via registros/catálogos corporativos.</p>
+<div class="example">
+  <h4>Exemplo: Agent Card</h4>
+<pre><code>{
+  "name": "Agente de Viagens",
+  "description": "Pesquisa e reserva hotéis e voos.",
+  "url": "https://agente-viagens.exemplo.com/a2a",
+  "version": "1.2.0",
+  "capabilities": { "streaming": true, "pushNotifications": true },
+  "defaultInputModes": ["text/plain", "application/json"],
+  "defaultOutputModes": ["text/plain", "application/json"],
+  "securitySchemes": { "oauth": { "type": "oauth2" } },
+  "skills": [
+    {
+      "id": "reservar-hotel",
+      "name": "Reservar hotel",
+      "description": "Encontra e reserva hotéis dado destino, datas e orçamento.",
+      "tags": ["viagem", "hotel"],
+      "examples": ["Hotel em Lisboa de 10 a 14/12 até 150€"]
+    }
+  ]
+}</code></pre>
+</div>
+
+<!-- ============================================================ -->
+<h2 id="a2a-composicao">Composição de agentes de frameworks diferentes</h2>
+<p>O valor do A2A aparece em ambientes heterogêneos: o agente de RH foi feito com LangGraph por um time, o de finanças com ADK por outro, um fornecedor oferece um agente de viagens próprio. Um orquestrador descobre seus Agent Cards e delega tarefas sem conhecer a implementação de nenhum.</p>
+<ul>
+  <li>O <strong>ADK</strong> tem suporte nativo para expor agentes via A2A e consumir agentes remotos como subagentes.</li>
+  <li>SDKs oficiais do A2A (Python, JS, Java, Go, .NET) permitem "embrulhar" agentes de qualquer framework (LangGraph, CrewAI, Claude Agent SDK) num servidor A2A.</li>
+  <li>Combine: <strong>A2A entre agentes</strong> + <strong>MCP de cada agente para suas ferramentas</strong>.</li>
+</ul>
+<div class="note"><strong>Pontos de atenção</strong>: autenticação entre agentes (OAuth, mTLS), autorização por skill, limites de custo/tempo por task, rastreamento distribuído (propagar trace IDs entre agentes), e tratar a saída de um agente remoto como <em>não confiável</em> (prompt injection entre agentes).</div>
+
+<!-- ============================================================ -->
+<h2 id="recursos">Recursos para aprofundar</h2>
+<div class="resources">
+  <div class="box docs"><h4>📘 Documentação do Claude</h4><ul>
+    <li><a href="https://platform.claude.com/docs/en/agents-and-tools/mcp-connector">MCP connector (API)</a></li>
+    <li><a href="https://platform.claude.com/docs/en/agents-and-tools/remote-mcp-servers">Remote MCP servers</a></li>
+    <li><a href="https://code.claude.com/docs/en/mcp">MCP no Claude Code</a></li>
+    <li><a href="https://platform.claude.com/docs/en/agents-and-tools/tool-use/overview">Tool use</a></li>
+    <li><a href="https://www.anthropic.com/news/model-context-protocol">Anúncio do MCP (Anthropic)</a></li>
+  </ul></div>
+  <div class="box reading"><h4>📄 Especificações</h4><ul>
+    <li><a href="https://modelcontextprotocol.io">modelcontextprotocol.io</a> — spec, SDKs, guias</li>
+    <li><a href="https://a2a-protocol.org">a2a-protocol.org</a> — spec e SDKs do A2A</li>
+    <li><a href="https://google.github.io/adk-docs/">ADK docs</a> (seção A2A)</li>
+    <li><a href="https://docs.docker.com/ai/mcp-catalog-and-toolkit/">Docker MCP Catalog &amp; Toolkit</a></li>
+  </ul></div>
+  <div class="box videos"><h4>▶️ Vídeos</h4><ul>
+    <li><a href="https://www.youtube.com/results?search_query=model+context+protocol+explained">Buscar: MCP explained</a></li>
+    <li><a href="https://www.youtube.com/results?search_query=build+mcp+server+python+fastmcp">Buscar: construir servidor MCP em Python</a></li>
+    <li><a href="https://www.youtube.com/results?search_query=A2A+agent2agent+protocol+google+explained">Buscar: A2A explicado</a></li>
+    <li><a href="https://www.youtube.com/results?search_query=MCP+vs+A2A">Buscar: MCP vs A2A</a></li>
+  </ul></div>
+  <div class="box courses"><h4>🎓 Cursos</h4><ul>
+    <li><a href="https://www.deeplearning.ai/short-courses/mcp-build-rich-context-ai-apps-with-anthropic/">MCP: Build Rich-Context AI Apps with Anthropic</a></li>
+    <li><a href="https://www.deeplearning.ai/short-courses/a2a-the-agent2agent-protocol/">A2A: The Agent2Agent Protocol</a></li>
+    <li><a href="https://anthropic.skilljar.com/">Anthropic Academy</a> — Introduction to MCP / MCP Advanced Topics</li>
+  </ul></div>
+</div>
+
+<h2 id="exercicios">Exercícios e quiz</h2>
+<details><summary>Projeto — servidor MCP + dois agentes A2A</summary>
+<ol>
+  <li>Crie um servidor MCP de pedidos (tool + resource + prompt), teste no Inspector e use no Claude Code.</li>
+  <li>Empacote em Docker e publique localmente.</li>
+  <li>Crie um agente ADK de "logística" exposto via A2A com Agent Card.</li>
+  <li>Crie um orquestrador (em outro framework) que descobre o card e delega uma task; trate <code>input-required</code>.</li>
+</ol></details>
+
+<div class="quiz" data-answer="a">
+  <div class="q">1. Qual primitiva MCP é tipicamente controlada pelo modelo?</div>
+  <button class="opt" data-opt="a">Tools</button>
+  <button class="opt" data-opt="b">Resources</button>
+  <button class="opt" data-opt="c">Prompts</button>
+  <button class="opt" data-opt="d">Roots</button>
+  <div class="explain">Tools são chamadas pelo modelo; resources são escolhidos pela aplicação; prompts são invocados pelo usuário.</div>
+</div>
+<div class="quiz" data-answer="c">
+  <div class="q">2. O agente remoto precisa saber a data de retorno para continuar. Estado da Task A2A?</div>
+  <button class="opt" data-opt="a">failed</button>
+  <button class="opt" data-opt="b">submitted</button>
+  <button class="opt" data-opt="c">input-required</button>
+  <button class="opt" data-opt="d">rejected</button>
+  <div class="explain">O cliente responde com nova Message na mesma Task e o trabalho continua.</div>
+</div>
+<div class="quiz" data-answer="d">
+  <div class="q">3. Num servidor MCP via stdio, onde escrever logs?</div>
+  <button class="opt" data-opt="a">stdout</button>
+  <button class="opt" data-opt="b">Na resposta da tool</button>
+  <button class="opt" data-opt="c">Em lugar nenhum</button>
+  <button class="opt" data-opt="d">stderr (ou arquivo), pois o stdout é o canal do protocolo</button>
+  <div class="explain">Escrever no stdout corrompe as mensagens JSON-RPC.</div>
+</div>
+
+</article>
+</main>
+</body>
+</html>
