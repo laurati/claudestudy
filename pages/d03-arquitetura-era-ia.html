@@ -44,6 +44,12 @@
 
 <!-- ============================================================ -->
 <h2 id="era-ia">Arquitetura de Software e Solução na era da IA</h2>
+<div class="ficha">
+  <div class="obj"><h5>🎯 Objetivo</h5><p>Entender o que muda na arquitetura quando parte do sistema passa a ser probabilística, cara por uso e lenta, e qual o novo papel de devs e arquitetos.</p></div>
+  <div class="serve"><h5>🧩 Para que serve</h5><p>Tomar decisões conscientes sobre <em>onde</em> colocar IA, com que nível de autonomia e com quais salvaguardas.</p></div>
+  <div class="usar"><h5>✅ Quando usar</h5><p>No início de qualquer projeto com IA e em revisões de arquitetura: "esta parte tolera erro? quanto custa por usuário? quem aprova ações?".</p></div>
+  <div class="evitar"><h5>⛔ Quando evitar / cuidados</h5><p>Não comece por agentes autônomos só porque estão na moda: uma chamada simples ao LLM dentro de um fluxo tradicional costuma resolver 80% dos casos.</p></div>
+</div>
 
 <h3>O mundo da arquitetura antes e depois da IA</h3>
 <div class="table-wrap">
@@ -79,8 +85,24 @@
 </ol>
 <div class="tip"><strong>Princípio:</strong> use o nível mais simples que resolve o problema. Agentes trazem flexibilidade em troca de custo, latência e imprevisibilidade (<a href="https://www.anthropic.com/engineering/building-effective-agents">Building effective agents</a>).</div>
 
+<div class="example">
+  <h4>Exemplo: os três níveis aplicados a um sistema de reembolso</h4>
+  <ol>
+    <li><strong>IA como feature:</strong> o atendente humano clica em "resumir conversa" e o LLM gera um resumo do caso.</li>
+    <li><strong>Workflow:</strong> código fixo faz: classificar o pedido (LLM) → buscar a política aplicável (RAG) → redigir resposta (LLM) → humano aprova.</li>
+    <li><strong>Agente:</strong> o modelo decide sozinho consultar o pedido, verificar o rastreio, checar a política e, se o valor for &lt; R$ 100, aprovar o reembolso via tool; acima disso, pede aprovação.</li>
+  </ol>
+  <p>Repare que o risco e o custo crescem a cada nível. Comece pelo 1 ou 2 e só suba quando o ganho justificar.</p>
+</div>
+
 <!-- ============================================================ -->
 <h2 id="acoplamento">Acoplamento e Saúde da Aplicação ao Longo do Tempo</h2>
+<div class="ficha">
+  <div class="obj"><h5>🎯 Objetivo</h5><p>Medir e controlar o acoplamento entre módulos (aferente/eferente, instabilidade, abstração, Main Sequence) ao longo do tempo.</p></div>
+  <div class="serve"><h5>🧩 Para que serve</h5><p>Manter o sistema fácil de mudar — o que importa ainda mais quando agentes de IA alteram muito código rapidamente e podem espalhar dependências.</p></div>
+  <div class="usar"><h5>✅ Quando usar</h5><p>Em code reviews de mudanças estruturais, no planejamento de refatorações, na escolha de onde isolar o provedor de LLM (atrás de uma interface/adapter).</p></div>
+  <div class="evitar"><h5>⛔ Quando evitar / cuidados</h5><p>Não persiga métricas pelo número: um módulo utilitário estável pode ter muitos dependentes e estar ótimo. Use as métricas para encontrar <em>tendências</em> ruins.</p></div>
+</div>
 
 <h3>Tipos de acoplamento e quando ele vira dor arquitetural</h3>
 <div class="table-wrap">
@@ -168,6 +190,12 @@ Pare e me consulte se algum teste falhar por motivo não óbvio.</code></pre>
 
 <!-- ============================================================ -->
 <h2 id="agentes-protocolos">Agentes de IA e Protocolos de Comunicação</h2>
+<div class="ficha">
+  <div class="obj"><h5>🎯 Objetivo</h5><p>Comparar software tradicional, microsserviços e agentes, conhecer arquiteturas de agentes e os protocolos MCP e A2A do ponto de vista arquitetural.</p></div>
+  <div class="serve"><h5>🧩 Para que serve</h5><p>Escolher entre workflow fixo, agente único ou multiagente e definir como componentes de IA se comunicam com ferramentas e entre si.</p></div>
+  <div class="usar"><h5>✅ Quando usar</h5><p>Quando o problema exige decisões dinâmicas (o próximo passo depende do resultado do anterior) ou integra muitos sistemas/ferramentas.</p></div>
+  <div class="evitar"><h5>⛔ Quando evitar / cuidados</h5><p>Fluxos previsíveis (ETL, aprovação com regras fixas) ficam mais baratos e confiáveis como código tradicional ou workflow orquestrado, sem agente decidindo.</p></div>
+</div>
 
 <h3>Software, microservices × agentes de IA</h3>
 <div class="table-wrap">
@@ -220,6 +248,12 @@ Pare e me consulte se algum teste falhar por motivo não óbvio.</code></pre>
 
 <!-- ============================================================ -->
 <h2 id="patterns">Design Patterns com IA</h2>
+<div class="ficha">
+  <div class="obj"><h5>🎯 Objetivo</h5><p>Conhecer padrões de projeto para sistemas com LLM (prompt chaining, routing, orchestrator-workers, evaluator-optimizer), padrões de segurança e os 12-Factor Agents.</p></div>
+  <div class="serve"><h5>🧩 Para que serve</h5><p>Reaproveitar soluções testadas em vez de inventar, e conversar com o time usando nomes comuns para estruturas recorrentes.</p></div>
+  <div class="usar"><h5>✅ Quando usar</h5><p>Ao desenhar qualquer fluxo com mais de uma chamada ao LLM ou com ferramentas que acessam dados sensíveis.</p></div>
+  <div class="evitar"><h5>⛔ Quando evitar / cuidados</h5><p>Não aplique um padrão complexo (multiagente) onde um simples (chaining) basta. Cada camada extra adiciona latência, custo e pontos de falha.</p></div>
+</div>
 
 <h3>Design Patterns para desenvolvimento de sistemas e agentes</h3>
 <div class="table-wrap">
@@ -294,6 +328,12 @@ export class ClaudeLLM implements LLM {
 
 <!-- ============================================================ -->
 <h2 id="caching">Caching</h2>
+<div class="ficha">
+  <div class="obj"><h5>🎯 Objetivo</h5><p>Dominar caching clássico (estratégias de escrita, invalidação, eviction) e os caches específicos de LLM: prompt caching e cache semântico.</p></div>
+  <div class="serve"><h5>🧩 Para que serve</h5><p>Cortar custo e latência: prompt caching reduz drasticamente o custo do prefixo repetido; cache de respostas evita chamar o LLM para perguntas idênticas.</p></div>
+  <div class="usar"><h5>✅ Quando usar</h5><ul><li><strong>Prompt caching:</strong> system prompt longo, documentos ou ferramentas repetidos em muitas chamadas.</li><li><strong>Cache de resposta:</strong> perguntas repetidas (FAQ) com resposta que não depende do usuário.</li></ul></div>
+  <div class="evitar"><h5>⛔ Quando evitar / cuidados</h5><p>Cache semântico pode devolver a resposta de uma pergunta <em>parecida mas diferente</em> ("cancelar pedido" × "cancelar assinatura"). Nunca compartilhe cache entre usuários para respostas com dados pessoais.</p></div>
+</div>
 
 <h3>Conceitos básicos de caching</h3>
 <p>Cache guarda o resultado de uma operação cara para reaproveitar. Métricas: <strong>hit rate</strong>, latência de hit vs miss, memória usada. Perguntas-chave: o que cachear, por quanto tempo, como invalidar, o que fazer quando o cache está frio.</p>
@@ -373,6 +413,12 @@ def fingerprint(model: str, system: str, messages: list, params: dict, prompt_ve
 
 <!-- ============================================================ -->
 <h2 id="context-engineering">Context Engineering e Prompt Engineering</h2>
+<div class="ficha">
+  <div class="obj"><h5>🎯 Objetivo</h5><p>Ir além do texto do prompt e projetar <em>tudo</em> o que o modelo vê a cada passo: instruções, ferramentas, documentos, histórico e memória.</p></div>
+  <div class="serve"><h5>🧩 Para que serve</h5><p>Manter agentes de longa duração eficazes: sem estourar a janela, sem diluir a atenção e sem perder o fio da tarefa.</p></div>
+  <div class="usar"><h5>✅ Quando usar</h5><p>Em agentes que executam muitas etapas, aplicações com RAG, chats longos e sistemas que combinam várias fontes de contexto.</p></div>
+  <div class="evitar"><h5>⛔ Quando evitar / cuidados</h5><p>Mais contexto não é sempre melhor: documentos irrelevantes e ferramentas redundantes pioram a resposta e encarecem a chamada.</p></div>
+</div>
 <h3>Prompt Engineering</h3>
 <p>Escrever boas instruções (ver <a href="d02-prompt-engineering.html">Disciplina 02</a>).</p>
 <h3>Context Engineering para aplicações de grande porte</h3>
@@ -388,8 +434,27 @@ def fingerprint(model: str, system: str, messages: list, params: dict, prompt_ve
 <h3>Versionamento de prompts e histórico de iterações</h3>
 <p>Em grande porte, cada prompt tem versão, changelog e resultado de eval associados; o log de produção registra qual versão gerou cada resposta (para auditoria e rollback). Ver <a href="d02-prompt-engineering.html#versionamento">Gestão e versionamento</a>.</p>
 
+<div class="example">
+  <h4>Exemplo: o mesmo agente com e sem context engineering</h4>
+  <p><strong>Tarefa:</strong> agente de suporte que responde dúvidas sobre pedidos.</p>
+  <div class="table-wrap"><table>
+    <tr><th></th><th>Sem cuidado</th><th>Com context engineering</th></tr>
+    <tr><td>Documentos</td><td>Manual inteiro (200 páginas) em toda chamada</td><td>Tool <code>buscar_manual(pergunta)</code> que devolve os 3 trechos relevantes</td></tr>
+    <tr><td>Ferramentas</td><td>25 tools, várias sobrepostas</td><td>6 tools com nomes e descrições claras</td></tr>
+    <tr><td>Histórico</td><td>Conversa inteira, 80 mensagens</td><td>Últimas mensagens + resumo do que já foi resolvido</td></tr>
+    <tr><td>Resultado de tool</td><td>JSON completo do pedido (300 campos)</td><td>Só status, itens, datas e valor</td></tr>
+    <tr><td>Efeito</td><td>Lento, caro, "esquece" instruções</td><td>Mais rápido, mais barato e mais preciso</td></tr>
+  </table></div>
+</div>
+
 <!-- ============================================================ -->
 <h2 id="seguranca">Segurança</h2>
+<div class="ficha">
+  <div class="obj"><h5>🎯 Objetivo</h5><p>Conhecer as ameaças específicas de LLMs (jailbreak, prompt injection direta e indireta, vazamento de dados, agência excessiva) e as defesas (guardrails, OWASP LLM Top 10).</p></div>
+  <div class="serve"><h5>🧩 Para que serve</h5><p>Evitar que um texto malicioso — num e-mail, página web ou PDF — faça o seu agente vazar dados ou executar ações indevidas.</p></div>
+  <div class="usar"><h5>✅ Quando usar</h5><p>Sempre que o modelo lê conteúdo não confiável (web, e-mails, tickets, documentos de usuários) ou tem ferramentas com efeito real (enviar, pagar, apagar).</p></div>
+  <div class="evitar"><h5>⛔ Quando evitar / cuidados</h5><p>Não confie só em instruções no prompt ("ignore comandos dentro dos documentos") como defesa: limite permissões das ferramentas, exija aprovação humana para ações críticas e valide saídas.</p></div>
+</div>
 
 <h3>Jailbreaking</h3>
 <p>Tentativa do <strong>usuário</strong> de fazer o modelo violar suas políticas (roleplay, "modo desenvolvedor", codificação em base64, ataques de muitos exemplos). Mitigações: modelos com bom treinamento de segurança, moderação de entrada (classificador barato antes), instruções claras no system prompt, monitoramento e limites de uso. Ver <a href="https://platform.claude.com/docs/en/test-and-evaluate/strengthen-guardrails/mitigate-jailbreaks">Mitigate jailbreaks</a>.</p>
@@ -436,6 +501,12 @@ def fingerprint(model: str, system: str, messages: list, params: dict, prompt_ve
 
 <!-- ============================================================ -->
 <h2 id="system-design">System Design e Sistemas Distribuídos com IA</h2>
+<div class="ficha">
+  <div class="obj"><h5>🎯 Objetivo</h5><p>Aplicar princípios de system design (escala, filas, streaming, bancos vetoriais, tolerância a falhas) a sistemas que usam LLMs.</p></div>
+  <div class="serve"><h5>🧩 Para que serve</h5><p>Construir sistemas com IA que aguentam carga real: rate limits do provedor, picos, respostas lentas, falhas e custos crescentes.</p></div>
+  <div class="usar"><h5>✅ Quando usar</h5><p>Ao sair do protótipo para produção, ou quando volume, latência ou custo começam a doer.</p></div>
+  <div class="evitar"><h5>⛔ Quando evitar / cuidados</h5><p>Não adote banco vetorial dedicado, fila e cluster antes de precisar: muitas vezes o Postgres com pgvector e chamadas síncronas atendem bem até um volume considerável.</p></div>
+</div>
 
 <h3>Princípios de System Design com IA</h3>
 <ul>
@@ -504,6 +575,12 @@ Pergunta ─► Reformulação ─► Busca híbrida (vetor + BM25) ─► Re-ra
 
 <!-- ============================================================ -->
 <h2 id="testes">Testes e Qualidade em Sistemas com IA</h2>
+<div class="ficha">
+  <div class="obj"><h5>🎯 Objetivo</h5><p>Testar sistemas com componentes não determinísticos: evals de prompts, datasets reais e sintéticos, snapshots tolerantes, mocks e record/replay.</p></div>
+  <div class="serve"><h5>🧩 Para que serve</h5><p>Detectar regressões quando o prompt, o modelo ou o pipeline de contexto mudam — antes que o usuário perceba.</p></div>
+  <div class="usar"><h5>✅ Quando usar</h5><p>Em todo sistema com IA em produção: evals no CI para mudanças de prompt/modelo; mocks nos testes unitários da sua lógica.</p></div>
+  <div class="evitar"><h5>⛔ Quando evitar / cuidados</h5><p>Não teste igualdade exata de texto gerado (o teste quebra à toa). Não chame a API real em todo teste unitário (lento, caro e instável).</p></div>
+</div>
 <h3>Testes de prompts e contextos (Prompt Testing)</h3>
 <p>Datasets de casos + avaliadores automáticos rodando no CI a cada mudança de prompt, modelo ou pipeline de contexto (ver <a href="d02-prompt-engineering.html#evaluation">Prompt Evaluation</a>).</p>
 <h3>Avaliação de agentes com datasets reais e sintéticos</h3>
@@ -525,8 +602,34 @@ Pergunta ─► Reformulação ─► Busca híbrida (vetor + BM25) ─► Re-ra
 <h3>Principais ferramentas (ex.: LangSmith)</h3>
 <p><a href="https://docs.smith.langchain.com">LangSmith</a> (datasets, experimentos, tracing), Langfuse (open source), promptfoo (evals via CLI/YAML no CI), DeepEval/Ragas (métricas RAG), a <a href="https://platform.claude.com/docs/en/test-and-evaluate/eval-tool">ferramenta de avaliação do Console do Claude</a>.</p>
 
+<div class="example">
+  <h4>Exemplo: teste por propriedades com repetição estatística (pytest)</h4>
+<pre><code>import re, pytest
+from app.suporte import responder   # sua função que chama o LLM
+
+CASOS = ["Quero cancelar o pedido 4471", "Meu pedido 4471 não chegou"]
+
+@pytest.mark.eval            # roda no job de evals, não nos testes unitários
+@pytest.mark.parametrize("pergunta", CASOS)
+def test_resposta_respeita_regras(pergunta):
+    sucessos = 0
+    for _ in range(5):                       # o modelo varia: rode várias vezes
+        r = responder(pergunta)
+        ok = ("4471" in r                    # cita o pedido
+              and not re.search(r"\S+@\S+", r)  # não vaza e-mail
+              and len(r.split()) &lt; 120)     # é conciso
+        sucessos += ok
+    assert sucessos &gt;= 4                     # exige 80% de sucesso</code></pre>
+</div>
+
 <!-- ============================================================ -->
 <h2 id="custos">Controle de Custos em Arquiteturas com IA</h2>
+<div class="ficha">
+  <div class="obj"><h5>🎯 Objetivo</h5><p>Entender como se cobra (tokens de entrada e saída, cache, batch) e como estimar, monitorar e reduzir o custo de uma arquitetura com IA.</p></div>
+  <div class="serve"><h5>🧩 Para que serve</h5><p>Evitar surpresas na fatura e garantir que a feature seja economicamente viável por usuário/requisição.</p></div>
+  <div class="usar"><h5>✅ Quando usar</h5><p>Antes de lançar (estimativa), em produção (monitoramento por feature/cliente) e ao escolher o modelo de cada etapa.</p></div>
+  <div class="evitar"><h5>⛔ Quando evitar / cuidados</h5><p>Não otimize custo cedo demais trocando para um modelo pior sem medir a qualidade. E não esqueça os tokens de saída e de raciocínio — costumam custar várias vezes mais que os de entrada.</p></div>
+</div>
 <h3>Input tokens, output tokens e limites por modelo</h3>
 <p>Custo ≈ (tokens de entrada × preço de entrada) + (tokens de saída × preço de saída) − descontos de cache/batch. Cada modelo tem janela de contexto e limite de saída próprios. Consulte sempre a página de <a href="https://platform.claude.com/docs/en/about-claude/pricing">Pricing</a> — preços mudam.</p>
 <div class="example">
@@ -553,6 +656,12 @@ Custo = 300M × preço_entrada + 600M × preço_cache_read + 120M × preço_saí
 
 <!-- ============================================================ -->
 <h2 id="fluxos">Fluxos de Chamada</h2>
+<div class="ficha">
+  <div class="obj"><h5>🎯 Objetivo</h5><p>Escolher entre chamadas síncronas, streaming e processamento assíncrono (filas, batch) para cada uso de IA.</p></div>
+  <div class="serve"><h5>🧩 Para que serve</h5><p>Garantir boa experiência (o usuário não fica olhando uma tela parada) e robustez (sem timeouts e com retries).</p></div>
+  <div class="usar"><h5>✅ Quando usar</h5><ul><li><strong>Streaming:</strong> chat e qualquer resposta que o usuário lê na hora.</li><li><strong>Assíncrono:</strong> relatórios, análise de documentos grandes, tarefas &gt; 30 s.</li><li><strong>Batch:</strong> milhares de itens sem urgência (até 24 h).</li></ul></div>
+  <div class="evitar"><h5>⛔ Quando evitar / cuidados</h5><p>Não processe 10 mil documentos dentro de uma requisição HTTP síncrona. E não use streaming quando a saída é JSON que só pode ser usado completo (a não ser que exiba progresso).</p></div>
+</div>
 <h3>Chamadas síncronas × assíncronas em aplicações com IA</h3>
 <div class="table-wrap">
 <table>
@@ -588,6 +697,12 @@ with client.messages.stream(
 
 <!-- ============================================================ -->
 <h2 id="gateways">AI Gateways</h2>
+<div class="ficha">
+  <div class="obj"><h5>🎯 Objetivo</h5><p>Entender o papel de um AI Gateway (ex.: LiteLLM) como ponto único entre suas aplicações e os provedores de LLM.</p></div>
+  <div class="serve"><h5>🧩 Para que serve</h5><p>Centralizar chaves, controlar custo e limites por time, trocar de provedor/modelo sem mudar código, fazer fallback e registrar tudo para auditoria.</p></div>
+  <div class="usar"><h5>✅ Quando usar</h5><p>Quando várias aplicações/times usam LLMs, quando há mais de um provedor ou quando a empresa precisa de governança (orçamento, logs, políticas).</p></div>
+  <div class="evitar"><h5>⛔ Quando evitar / cuidados</h5><p>Para uma única aplicação com um provedor, o gateway é mais um serviço para operar. E um gateway mal configurado vira ponto único de falha — tenha redundância.</p></div>
+</div>
 <p>Um <strong>AI Gateway</strong> é um proxy entre suas aplicações e os provedores de LLM — o equivalente a um API Gateway, especializado em IA.</p>
 <h3>Integração com múltiplos provedores (OpenAI, Anthropic)</h3>
 <p>Uma única interface para vários provedores: as aplicações não precisam conhecer o SDK de cada um, e trocar de modelo vira configuração.</p>
@@ -656,12 +771,11 @@ general_settings:
     <li><a href="https://www.anthropic.com/news/contextual-retrieval">Contextual Retrieval</a></li>
   </ul></div>
   <div class="box videos"><h4>▶️ Vídeos</h4><ul>
-    <li><a href="https://www.youtube.com/@anthropic-ai">Anthropic</a> — talks sobre agentes e context engineering</li>
-    <li><a href="https://www.youtube.com/results?search_query=12+factor+agents+dex+horthy">Buscar: 12-Factor Agents (Dex Horthy)</a></li>
-    <li><a href="https://www.youtube.com/results?search_query=prompt+injection+explained+simon+willison">Buscar: Prompt injection explained</a></li>
-    <li><a href="https://www.youtube.com/results?search_query=RAG+architecture+production+system+design">Buscar: RAG em produção (system design)</a></li>
-    <li><a href="https://www.youtube.com/results?search_query=main+sequence+instability+abstraction+uncle+bob">Buscar: Main Sequence (Uncle Bob)</a></li>
-    <li><a href="https://www.youtube.com/@FullCycle">Full Cycle</a> — arquitetura de software</li>
+    <li><a href="https://www.youtube.com/watch?v=D7_ipDqhtwk">How We Build Effective Agents</a> — Barry Zhang (Anthropic), AI Engineer Summit 2025: quando usar workflow × agente.</li>
+    <li><a href="https://www.youtube.com/watch?v=2yi4mAN3CtE">12-factor Agents — Patterns of reliable LLM applications</a> — Dex Horthy: os 12 princípios citados em Design Patterns.</li>
+    <li><a href="https://www.youtube.com/watch?v=FgxwCaL6UTA">Prompt Injection, explained</a> — Simon Willison, quem cunhou o termo: por que é tão difícil de resolver (tópico Segurança).</li>
+    <li><a href="https://www.youtube.com/watch?v=sVcwVQRHIc8">Learn RAG From Scratch</a> — curso do freeCodeCamp com Lance Martin (LangChain): indexação, recuperação, roteamento e RAG avançado.</li>
+    <li><a href="https://www.youtube.com/watch?v=URa306q8mn8">The stable dependency principle</a> — Uncle Bob: a base das métricas de estabilidade e da Main Sequence (tópico Acoplamento).</li>
   </ul></div>
   <div class="box courses"><h4>🎓 Cursos</h4><ul>
     <li><a href="https://www.deeplearning.ai/short-courses/building-applications-vector-databases/">Building Applications with Vector Databases</a></li>

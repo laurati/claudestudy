@@ -28,6 +28,12 @@
 
 <!-- ============================================================ -->
 <h2 id="introducao">Introdução à IA Generativa</h2>
+<div class="ficha">
+  <div class="obj"><h5>🎯 Objetivo</h5><p>Situar a IA generativa na história da IA e entender o que muda quando o computador passa a <em>produzir</em> conteúdo em vez de só classificar.</p></div>
+  <div class="serve"><h5>🧩 Para que serve</h5><p>Dar vocabulário e critério para conversar sobre IA com produto, gestão e outros devs, e reconhecer que tipo de IA resolve cada problema.</p></div>
+  <div class="usar"><h5>✅ Quando usar</h5><p>Ao avaliar se um problema pede regras fixas, um modelo estatístico clássico ou um LLM (ex.: "precisamos de um chatbot ou de um formulário com regras?").</p></div>
+  <div class="evitar"><h5>⛔ Quando evitar / cuidados</h5><p>Não use IA generativa onde uma regra determinística resolve (cálculo de imposto, validação de CPF): é mais cara, mais lenta e pode errar.</p></div>
+</div>
 
 <h3>Conceitos e evolução histórica dos modelos generativos</h3>
 <p><strong>IA generativa</strong> é o ramo da IA que cria conteúdo novo — texto, código, imagens, áudio — aprendendo a distribuição estatística dos dados de treinamento. Em vez de apenas classificar ("isto é spam?"), o modelo <em>produz</em> ("escreva uma resposta a este e-mail").</p>
@@ -67,6 +73,12 @@
 
 <!-- ============================================================ -->
 <h2 id="llms">Modelos de Linguagem (LLMs)</h2>
+<div class="ficha">
+  <div class="obj"><h5>🎯 Objetivo</h5><p>Entender o que é um LLM, como ele aprende, quais famílias existem (proprietários, open source, multimodais) e como executá-los localmente.</p></div>
+  <div class="serve"><h5>🧩 Para que serve</h5><p>Escolher o modelo certo para cada caso: grande e capaz para raciocínio difícil; pequeno e barato para tarefas simples em alto volume; local quando os dados não podem sair da empresa.</p></div>
+  <div class="usar"><h5>✅ Quando usar</h5><ul><li>Modelo de ponta via API: agentes, código, análise complexa.</li><li>Modelo pequeno/rápido: classificação, extração, roteamento.</li><li>Open source local (Ollama, Hugging Face): dados sensíveis, uso offline, custo fixo.</li></ul></div>
+  <div class="evitar"><h5>⛔ Quando evitar / cuidados</h5><p>Rodar modelo local "para economizar" sem medir: GPUs, manutenção e qualidade inferior costumam custar mais que a API em volumes baixos.</p></div>
+</div>
 
 <h3>O que são LLMs e como aprendem a gerar conteúdo</h3>
 <p>Um <strong>Large Language Model</strong> é uma rede neural (quase sempre um Transformer) com bilhões de parâmetros, treinada para uma tarefa aparentemente simples: <strong>prever o próximo token</strong> dado o texto anterior. Para acertar essa previsão em trilhões de exemplos (livros, código, web), o modelo precisa internalizar gramática, fatos, padrões de raciocínio e estilos de código.</p>
@@ -123,6 +135,12 @@ curl http://localhost:11434/api/generate -d '{
 
 <!-- ============================================================ -->
 <h2 id="geracao">Geração de Respostas</h2>
+<div class="ficha">
+  <div class="obj"><h5>🎯 Objetivo</h5><p>Entender como uma resposta é gerada token a token e como tokens, temperatura, top-p e janela de contexto afetam qualidade, custo e latência.</p></div>
+  <div class="serve"><h5>🧩 Para que serve</h5><p>Estimar custo (cobra-se por token), ajustar a criatividade/determinismo da saída e evitar estourar o limite de contexto.</p></div>
+  <div class="usar"><h5>✅ Quando usar</h5><p>Sempre que configurar uma chamada à API: <code>max_tokens</code> e o tamanho do contexto entram em todo projeto; temperatura importa ao alternar entre tarefas criativas e tarefas exatas.</p></div>
+  <div class="evitar"><h5>⛔ Quando evitar / cuidados</h5><p>Não use temperatura alta para extração de dados ou código (aumenta variação e erro). E não ajuste temperatura e top-p ao mesmo tempo — mexa em um só.</p></div>
+</div>
 
 <h3>Tokens e tokenização</h3>
 <p>LLMs não leem letras nem palavras: leem <strong>tokens</strong>, pedaços de texto definidos por um algoritmo como BPE (<em>Byte Pair Encoding</em>). Palavras comuns viram 1 token; palavras raras são quebradas em vários. Em inglês, 1 token ≈ 4 caracteres; em português costuma haver um pouco mais de tokens por palavra.</p>
@@ -181,6 +199,12 @@ print(count.input_tokens)</code></pre>
 
 <!-- ============================================================ -->
 <h2 id="arquiteturas">Arquiteturas e Tipos de Modelos</h2>
+<div class="ficha">
+  <div class="obj"><h5>🎯 Objetivo</h5><p>Distinguir encoder-only, decoder-only e encoder-decoder, e os tipos de modelo (texto, código, embeddings, multimodal).</p></div>
+  <div class="serve"><h5>🧩 Para que serve</h5><p>Escolher a ferramenta certa: modelos de embeddings para <em>comparar/buscar</em>, decoders (LLMs) para <em>gerar/raciocinar</em>.</p></div>
+  <div class="usar"><h5>✅ Quando usar</h5><p>Ao desenhar uma feature: busca semântica e detecção de duplicatas → embeddings; resumo, chat, código → LLM generativo; ler imagem/PDF → multimodal.</p></div>
+  <div class="evitar"><h5>⛔ Quando evitar / cuidados</h5><p>Não use um LLM generativo para calcular similaridade entre milhões de documentos — é ordens de grandeza mais caro e lento do que embeddings.</p></div>
+</div>
 
 <h3>Encoder-only, decoder-only e encoder-decoder</h3>
 <div class="table-wrap">
@@ -203,8 +227,26 @@ print(count.input_tokens)</code></pre>
 <h3>Comparação entre os estilos e seus usos ideais</h3>
 <p>Pergunta-guia: <em>preciso gerar algo ou só entender/comparar?</em> Para comparar e buscar, use embeddings (baratos e rápidos). Para gerar ou raciocinar, use um decoder. Para pipelines de alto volume e tarefa estreita (ex.: classificar tickets), um modelo pequeno pode bastar.</p>
 
+<div class="example">
+  <h4>Exemplo prático: qual tipo de modelo para cada feature de um e-commerce</h4>
+  <div class="table-wrap"><table>
+    <tr><th>Feature</th><th>Tipo de modelo</th><th>Por quê</th></tr>
+    <tr><td>"Produtos parecidos com este"</td><td>Embeddings</td><td>Comparar vetores é barato e rápido; não precisa gerar texto</td></tr>
+    <tr><td>Busca "tênis confortável para corrida na chuva"</td><td>Embeddings + busca lexical</td><td>Entende a intenção; o lexical garante marca/modelo exatos</td></tr>
+    <tr><td>Resumo das avaliações de um produto</td><td>LLM (decoder)</td><td>Precisa redigir texto novo</td></tr>
+    <tr><td>Classificar 1 milhão de avaliações em positiva/negativa</td><td>Modelo pequeno (ou encoder fine-tunado)</td><td>Tarefa estreita, alto volume, custo importa</td></tr>
+    <tr><td>Cadastrar produto a partir da foto da etiqueta</td><td>Multimodal</td><td>Precisa ler imagem</td></tr>
+  </table></div>
+</div>
+
 <!-- ============================================================ -->
 <h2 id="por-dentro">Como os LLMs funcionam por dentro</h2>
+<div class="ficha">
+  <div class="obj"><h5>🎯 Objetivo</h5><p>Ter um modelo mental de como o Transformer funciona (atenção, camadas) e de como o modelo é treinado (pré-treino, fine-tuning, alinhamento).</p></div>
+  <div class="serve"><h5>🧩 Para que serve</h5><p>Explicar comportamentos do dia a dia: por que o modelo erra fatos raros, por que a ordem do contexto importa, por que ele não "sabe" o que aconteceu depois do treino.</p></div>
+  <div class="usar"><h5>✅ Quando usar</h5><p>Ao depurar respostas estranhas, ao decidir entre fine-tuning e prompt, e ao explicar limitações para stakeholders.</p></div>
+  <div class="evitar"><h5>⛔ Quando evitar / cuidados</h5><p>Não é preciso saber a matemática para usar bem um LLM. Não tente "programar" o modelo achando que ele executa lógica como um interpretador: ele prevê texto provável.</p></div>
+</div>
 
 <h3>Redes neurais e a arquitetura Transformer</h3>
 <p>Uma <strong>rede neural</strong> é uma composição de camadas que multiplicam vetores por matrizes de pesos e aplicam funções não lineares. O <strong>Transformer</strong> organiza isso em blocos repetidos com duas peças principais:</p>
@@ -232,8 +274,24 @@ Camada final → probabilidades do próximo token (softmax)</div>
 <h3>Noções de como o modelo aprende a gerar respostas</h3>
 <p>Durante o treino, para cada posição o modelo compara sua previsão com o token real e calcula um erro (<em>cross-entropy loss</em>). O algoritmo de <em>backpropagation</em> ajusta levemente bilhões de pesos para reduzir esse erro. Repetido trilhões de vezes, emergem capacidades como traduzir, resumir e programar — sem que ninguém as tenha programado explicitamente.</p>
 
+<div class="example">
+  <h4>Exemplo: o que essa teoria explica na prática</h4>
+  <ul>
+    <li><strong>"Ele inventou uma função que não existe na biblioteca."</strong> O modelo aprendeu padrões de nomes de API; uma função plausível tem alta probabilidade mesmo sem existir. Solução: dar a documentação no contexto (Context7, RAG).</li>
+    <li><strong>"Ele não conhece a versão nova do framework."</strong> O pré-treino tem data de corte. Conhecimento posterior só entra pelo contexto.</li>
+    <li><strong>"Respondeu diferente com a mesma pergunta."</strong> A saída é amostrada de uma distribuição de probabilidades; com temperatura &gt; 0 há variação.</li>
+    <li><strong>"Ficou educado e recusou algo perigoso."</strong> Efeito do alinhamento (RLHF/Constitutional AI), não do pré-treino.</li>
+  </ul>
+</div>
+
 <!-- ============================================================ -->
 <h2 id="embeddings">Embeddings e Representações Vetoriais</h2>
+<div class="ficha">
+  <div class="obj"><h5>🎯 Objetivo</h5><p>Entender embeddings como vetores que representam significado e como medir proximidade semântica (cosseno).</p></div>
+  <div class="serve"><h5>🧩 Para que serve</h5><p>Construir busca semântica, recomendação, agrupamento de conteúdo, detecção de duplicatas e a etapa de recuperação de um RAG.</p></div>
+  <div class="usar"><h5>✅ Quando usar</h5><p>Quando a busca por palavra-chave falha porque as pessoas usam palavras diferentes para a mesma coisa ("não consigo entrar" × "erro de login").</p></div>
+  <div class="evitar"><h5>⛔ Quando evitar / cuidados</h5><p>Busca por código exato, SKU, número de pedido ou nome próprio raro: embeddings vão mal. Combine com busca lexical (BM25) — a chamada <em>busca híbrida</em>.</p></div>
+</div>
 
 <h3>Representações numéricas e proximidade semântica</h3>
 <p>Um <strong>embedding</strong> é um vetor (ex.: 1024 números) que representa o significado de um texto. Textos com significado parecido ficam próximos no espaço vetorial. A proximidade costuma ser medida por <strong>similaridade de cosseno</strong>:</p>
@@ -274,6 +332,12 @@ print(docs[best], float(scores[best]))   # → "Como redefinir minha senha?"</co
 
 <!-- ============================================================ -->
 <h2 id="alucinacao">Alucinação em LLMs</h2>
+<div class="ficha">
+  <div class="obj"><h5>🎯 Objetivo</h5><p>Entender por que LLMs inventam informações com confiança e conhecer as estratégias para reduzir isso.</p></div>
+  <div class="serve"><h5>🧩 Para que serve</h5><p>Projetar aplicações confiáveis: dar fontes ao modelo, permitir que ele diga "não sei", exigir citações e validar a saída.</p></div>
+  <div class="usar"><h5>✅ Quando usar</h5><p>Em qualquer aplicação em que um erro factual cause dano: suporte ao cliente, jurídico, saúde, financeiro, geração de código que chama APIs.</p></div>
+  <div class="evitar"><h5>⛔ Quando evitar / cuidados</h5><p>Não confie em "o modelo é muito bom, não alucina": a taxa diminui, mas não zera. Também não peça fatos de nicho sem fornecer a fonte no contexto.</p></div>
+</div>
 
 <h3>O que é alucinação e por que acontece</h3>
 <p><strong>Alucinação</strong> é quando o modelo gera algo plausível mas falso: uma função de biblioteca que não existe, uma citação inventada, um número errado. Acontece porque o modelo é treinado para produzir a continuação <em>mais provável</em>, não para verificar a verdade; quando não "sabe", a resposta fluente e confiante ainda é estatisticamente provável.</p>
@@ -306,6 +370,12 @@ Pergunta: {{PERGUNTA}}</code></pre>
 
 <!-- ============================================================ -->
 <h2 id="estrategias">Estratégias de Uso: Prompt Engineering, RAG e Fine-tuning</h2>
+<div class="ficha">
+  <div class="obj"><h5>🎯 Objetivo</h5><p>Saber escolher entre prompt engineering, RAG e fine-tuning (ou combiná-los) para adaptar um LLM ao seu problema.</p></div>
+  <div class="serve"><h5>🧩 Para que serve</h5><p>Evitar o erro clássico de ir direto para fine-tuning quando um prompt melhor ou um RAG resolveria com uma fração do custo.</p></div>
+  <div class="usar"><h5>✅ Quando usar</h5><ul><li><strong>Prompt:</strong> sempre o primeiro passo.</li><li><strong>RAG:</strong> o modelo precisa de conhecimento privado ou que muda (manuais, políticas, tickets).</li><li><strong>Fine-tuning:</strong> formato/estilo muito específico em altíssimo volume, depois de esgotar os anteriores.</li></ul></div>
+  <div class="evitar"><h5>⛔ Quando evitar / cuidados</h5><p>Fine-tuning <strong>não</strong> é boa forma de "ensinar fatos" que mudam: o modelo não cita fonte, e a cada mudança você treina de novo.</p></div>
+</div>
 <p>Há três formas principais de adaptar um LLM ao seu problema. Use-as nesta ordem, da mais barata para a mais cara:</p>
 <div class="table-wrap">
 <table>
@@ -321,6 +391,16 @@ Pergunta ─► embedding ─► busca no banco vetorial ─► top-k trechos
                                                      │
 Pergunta + trechos + instruções ─────────────────────┴─► LLM ─► resposta com citações</div>
 <div class="tip"><strong>Melhoria de RAG:</strong> o artigo <a href="https://www.anthropic.com/news/contextual-retrieval">Contextual Retrieval</a> da Anthropic mostra como adicionar contexto a cada trecho antes de indexá-lo e combinar embeddings com BM25 reduz bastante as falhas de recuperação.</div>
+
+<div class="example">
+  <h4>Exemplo de decisão: assistente interno de RH</h4>
+  <ol>
+    <li><strong>Prompt engineering:</strong> definimos tom, formato e regra "se não souber, encaminhe para rh@". Resolve o comportamento, mas o modelo não conhece a política de férias da empresa.</li>
+    <li><strong>RAG:</strong> indexamos o handbook, políticas e FAQ. Agora ele responde com base nos documentos e cita a fonte. Quando a política muda, basta reindexar o PDF.</li>
+    <li><strong>Fine-tuning?</strong> Não foi necessário. Só faria sentido se, com milhões de perguntas/mês, quiséssemos um modelo pequeno e barato imitando o formato do grande.</li>
+  </ol>
+</div>
+<div class="note"><strong>Regra de bolso:</strong> problema de <em>comportamento</em> → prompt; problema de <em>conhecimento</em> → RAG; problema de <em>custo/escala com comportamento já definido</em> → considere fine-tuning ou um modelo menor.</div>
 
 <!-- ============================================================ -->
 <h2 id="recursos">Recursos para aprofundar</h2>
@@ -342,7 +422,7 @@ Pergunta + trechos + instruções ───────────────�
     <li><a href="https://www.youtube.com/watch?v=eMlx5fFNoYc">Attention in transformers, step-by-step</a> — 3Blue1Brown</li>
     <li><a href="https://www.youtube.com/watch?v=aircAruvnKk">But what is a neural network?</a> — 3Blue1Brown</li>
     <li><a href="https://www.youtube.com/watch?v=kCc8FmEb1nY">Let's build GPT from scratch</a> — Karpathy (código)</li>
-    <li><a href="https://www.youtube.com/results?search_query=o+que+%C3%A9+LLM+tokens+embeddings+explicado+portugu%C3%AAs">Buscar: LLMs explicados em português</a></li>
+    <li><a href="https://www.youtube.com/watch?v=9m_sCYl4nds">Como um modelo de IA realmente pensa: tokens, embeddings e transformers</a> — em português</li>
   </ul></div>
   <div class="box courses"><h4>🎓 Cursos</h4><ul>
     <li><a href="https://www.deeplearning.ai/courses/generative-ai-for-everyone/">Generative AI for Everyone</a> — DeepLearning.AI</li>

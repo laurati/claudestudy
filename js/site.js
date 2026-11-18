@@ -5,8 +5,7 @@
 
 const SITE_PAGES = [
   { file: "index.html", title: "Início", group: "Comece aqui" },
-  { file: "pages/mba.html", title: "O MBA: visão geral", group: "Comece aqui" },
-  { file: "pages/plano-estudos.html", title: "Plano de estudos (6/8/12 meses)", group: "Comece aqui" },
+  { file: "pages/plano-estudos.html", title: "Plano de estudos", group: "Comece aqui" },
   { file: "pages/d01-fundamentos-ia-generativa.html", title: "01 · Fundamentos de IA Generativa", group: "Disciplinas", track: true },
   { file: "pages/d02-prompt-engineering.html", title: "02 · Prompt Engineering", group: "Disciplinas", track: true },
   { file: "pages/d03-arquitetura-era-ia.html", title: "03 · Arquitetura na era da IA", group: "Disciplinas", track: true },
@@ -18,6 +17,7 @@ const SITE_PAGES = [
   { file: "pages/d09-protocolos.html", title: "09 · Protocolos de comunicação", group: "Disciplinas", track: true },
   { file: "pages/d10-devops-sre.html", title: "10 · DevOps e SRE com IA", group: "Disciplinas", track: true },
   { file: "pages/d11-carreira.html", title: "11 · Marketing Pessoal, Equipe e Empreendedorismo", group: "Disciplinas", track: true },
+  { file: "pages/preparacao-cca-f.html", title: "Preparação para a CCA-F", group: "Certificação" },
   { file: "pages/recursos.html", title: "Recursos, cursos e vídeos", group: "Referência" },
   { file: "pages/glossario.html", title: "Glossário", group: "Referência" },
 ];
@@ -56,8 +56,8 @@ function setDone(file, value) {
     <a class="logo" href="${url("index.html")}">Claude<span>Study</span></a>
     <nav>
       <a href="${url("index.html")}">Início</a>
-      <a href="${url("pages/mba.html")}">O MBA</a>
       <a href="${url("index.html")}#disciplinas">Disciplinas</a>
+      <a href="${url("pages/preparacao-cca-f.html")}">CCA-F</a>
       <a href="${url("pages/recursos.html")}">Recursos</a>
       <a href="${url("pages/glossario.html")}">Glossário</a>
     </nav>
@@ -210,7 +210,7 @@ function setDone(file, value) {
   // ---- rodapé e voltar ao topo ----
   const footer = document.createElement("footer");
   footer.className = "site-footer";
-  footer.innerHTML = `ClaudeStudy — material de estudo independente baseado na grade do MBA em Engenharia de Software com IA.
+  footer.innerHTML = `ClaudeStudy — material de estudo sobre Engenharia de Software com IA.
     Conteúdo explicativo próprio, com links para a <a href="https://platform.claude.com/docs/en/get-started" target="_blank" rel="noopener">documentação oficial do Claude</a> e outras fontes públicas.`;
   document.body.append(footer);
 

@@ -28,6 +28,12 @@
 
 <!-- ============================================================ -->
 <h2 id="fundamentos">Fundamentos de DevOps e SRE</h2>
+<div class="ficha">
+  <div class="obj"><h5>🎯 Objetivo</h5><p>Revisar os princípios de DevOps e SRE (SLI/SLO, error budget, toil, postmortem) e identificar onde a IA generativa ajuda.</p></div>
+  <div class="serve"><h5>🧩 Para que serve</h5><p>Aplicar IA onde ela dá retorno real em operações — diagnóstico, documentação, automação de toil — sem colocar a confiabilidade em risco.</p></div>
+  <div class="usar"><h5>✅ Quando usar</h5><p>Ao planejar a adoção de IA no time de plataforma/SRE e ao priorizar quais tarefas manuais automatizar primeiro.</p></div>
+  <div class="evitar"><h5>⛔ Quando evitar / cuidados</h5><p>IA não substitui fundamentos: sem SLOs, observabilidade e runbooks, um agente operacional só automatiza o caos.</p></div>
+</div>
 <h3>Princípios e práticas do DevOps moderno</h3>
 <ul>
   <li><strong>Cultura</strong> de responsabilidade compartilhada entre desenvolvimento e operações ("you build it, you run it").</li>
@@ -67,6 +73,12 @@ Error budget      → 100% − SLO = 0,1% ≈ 43 min/mês de "falha permitida"
 
 <!-- ============================================================ -->
 <h2 id="pipelines">Automação de pipelines e deploys com IA</h2>
+<div class="ficha">
+  <div class="obj"><h5>🎯 Objetivo</h5><p>Usar IA para gerar e otimizar pipelines (CI/CD), revisar PRs automaticamente e analisar falhas de build.</p></div>
+  <div class="serve"><h5>🧩 Para que serve</h5><p>Reduzir o tempo de configuração e de diagnóstico de builds quebrados e acelerar o ciclo de feedback.</p></div>
+  <div class="usar"><h5>✅ Quando usar</h5><p>Ao criar pipelines novos, quando builds falham com frequência, em revisão automática de PRs e na análise de builds lentos.</p></div>
+  <div class="evitar"><h5>⛔ Quando evitar / cuidados</h5><p>Não deixe a IA alterar pipelines de deploy em produção sem revisão. Nunca exponha segredos do CI ao agente além do estritamente necessário.</p></div>
+</div>
 <h3>Geração assistida de pipelines e arquivos de configuração</h3>
 <div class="example">
   <h4>Exemplo: prompt + pipeline gerado (GitHub Actions)</h4>
@@ -117,6 +129,12 @@ jobs:
 
 <!-- ============================================================ -->
 <h2 id="devsecops">Segurança em pipelines com IA</h2>
+<div class="ficha">
+  <div class="obj"><h5>🎯 Objetivo</h5><p>Integrar segurança ao pipeline com apoio de IA: regras SAST/DAST, triagem de vulnerabilidades e validação de dependências.</p></div>
+  <div class="serve"><h5>🧩 Para que serve</h5><p>Encontrar vulnerabilidades mais cedo e reduzir o ruído (falsos positivos) que faz o time ignorar alertas.</p></div>
+  <div class="usar"><h5>✅ Quando usar</h5><p>Em todo pipeline de CI; com mais rigor em código de autenticação, pagamentos, dados pessoais e quando a IA adiciona dependências.</p></div>
+  <div class="evitar"><h5>⛔ Quando evitar / cuidados</h5><p>LLM não é scanner determinístico: use-o para triagem e explicação, mantendo Semgrep/CodeQL/Trivy como base. Não envie código proprietário para serviços não aprovados.</p></div>
+</div>
 <h3>Introdução ao conceito de DevSecOps</h3>
 <p><strong>DevSecOps</strong> integra segurança em todo o ciclo ("shift left"): verificações automáticas a cada commit/PR, em vez de uma auditoria no fim. Camadas: SAST (código), SCA (dependências), segredos, IaC, imagens de container, DAST (aplicação rodando).</p>
 <h3>Geração assistida de regras de SAST e DAST</h3>
@@ -157,6 +175,12 @@ rules:
 
 <!-- ============================================================ -->
 <h2 id="observabilidade">Monitoramento e observabilidade assistidos por IA</h2>
+<div class="ficha">
+  <div class="obj"><h5>🎯 Objetivo</h5><p>Usar IA para explicar anomalias, consultar métricas e logs em linguagem natural, correlacionar fontes e gerar resumos e dashboards.</p></div>
+  <div class="serve"><h5>🧩 Para que serve</h5><p>Diminuir o tempo para entender "o que está acontecendo" e tornar a observabilidade acessível a quem não domina PromQL/LogQL.</p></div>
+  <div class="usar"><h5>✅ Quando usar</h5><p>Durante incidentes, em revisões semanais de saúde do sistema e ao criar dashboards e alertas novos.</p></div>
+  <div class="evitar"><h5>⛔ Quando evitar / cuidados</h5><p>Sempre confira a consulta gerada (PromQL/SQL) e os números: o modelo pode errar a métrica ou o intervalo e tirar conclusões erradas com confiança.</p></div>
+</div>
 <h3>Detecção de anomalias com explicação em linguagem natural</h3>
 <p>A detecção em si costuma ser estatística/ML (sazonalidade, desvio). A GenAI agrega a <strong>explicação</strong>: "a latência p99 do checkout subiu 4× às 14h05, logo após o deploy v2.4.1; o aumento está concentrado em chamadas ao serviço de frete, que passou a responder com timeout".</p>
 <h3>Consultas conversacionais a métricas e logs</h3>
@@ -175,8 +199,25 @@ sum by (route) (rate(http_requests_total{service="checkout"}[5m]))</code></pre>
 <h3>Geração automatizada de resumos e dashboards</h3>
 <p>Resumos diários/semanais de saúde (SLOs, consumo de error budget, top erros), e geração de dashboards como código (JSON do Grafana, Terraform) a partir de uma descrição.</p>
 
+<div class="example">
+  <h4>Exemplo: resumo semanal de saúde gerado por IA</h4>
+<pre class="plain"><code>Resumo da semana — serviço checkout
+• SLO de disponibilidade: 99,93% (meta 99,9%) — 31% do error budget consumido.
+• Principal evento: terça 14h05–14h40, timeouts no serviço de frete após deploy v2.4.1
+  (rollback às 14h38). Postmortem em andamento.
+• Erros que mais cresceram: PaymentDeclined +40% (concentrado na bandeira X — verificar com o PSP).
+• Alertas ruidosos: "DiskUsage>70%" disparou 22× sem ação → sugerido ajustar para 85% por 15 min.</code></pre>
+  <p>Gerado por um job agendado que consulta Prometheus, Loki e o histórico de deploys (via MCP ou API) e publica no canal do time.</p>
+</div>
+
 <!-- ============================================================ -->
 <h2 id="incidentes">Resposta a incidentes com suporte de IA</h2>
+<div class="ficha">
+  <div class="obj"><h5>🎯 Objetivo</h5><p>Apoiar a resposta a incidentes com IA: resumos automáticos, sugestões baseadas em runbooks e histórico, ChatOps e rascunho de postmortem.</p></div>
+  <div class="serve"><h5>🧩 Para que serve</h5><p>Reduzir o MTTR e a carga cognitiva do on-call, e manter stakeholders informados sem tirar o foco de quem está resolvendo.</p></div>
+  <div class="usar"><h5>✅ Quando usar</h5><p>Em incidentes com muitas pessoas e mensagens, quando há runbooks e histórico de incidentes para consultar, e após o incidente (postmortem).</p></div>
+  <div class="evitar"><h5>⛔ Quando evitar / cuidados</h5><p>Não execute automaticamente a mitigação sugerida pela IA em produção. Sugestão sem fonte (runbook, incidente anterior) deve ser tratada como hipótese.</p></div>
+</div>
 <h3>Geração automática de resumos de incidentes</h3>
 <p>Durante um incidente, quem chega no meio precisa de contexto rápido. A IA lê o canal do incidente, alertas e timeline e produz: o que está acontecendo, impacto, hipóteses, o que já foi tentado, quem está fazendo o quê.</p>
 <h3>Sugestões de mitigação com base em runbooks e histórico</h3>
@@ -209,6 +250,12 @@ processos, não pessoas). Marque [VERIFICAR] tudo que for inferência."</code></
 
 <!-- ============================================================ -->
 <h2 id="agentes-operacionais">Agentes operacionais e copilotos</h2>
+<div class="ficha">
+  <div class="obj"><h5>🎯 Objetivo</h5><p>Diferenciar copilotos de agentes autônomos em operações e adotar agentes de forma gradual (níveis 0 a 3) com supervisão humana.</p></div>
+  <div class="serve"><h5>🧩 Para que serve</h5><p>Automatizar diagnóstico e correções de baixo risco com segurança, ganhando confiança passo a passo.</p></div>
+  <div class="usar"><h5>✅ Quando usar</h5><p>Comece pelo nível 0–1 (ler e sugerir) em qualquer ambiente. Suba de nível só para classes de ação reversíveis e com bom histórico.</p></div>
+  <div class="evitar"><h5>⛔ Quando evitar / cuidados</h5><p>Em sistemas críticos (pagamentos, saúde), evite ações autônomas. Nunca dê ao agente credenciais de administrador nem ações sem botão de parar e auditoria.</p></div>
+</div>
 <h3>Diferença entre copilotos e agentes autônomos</h3>
 <div class="table-wrap">
 <table>
@@ -243,6 +290,27 @@ processos, não pessoas). Marque [VERIFICAR] tudo que for inferência."</code></
 </ul>
 <div class="tip">O livro <a href="https://sre.google/books/">Site Reliability Engineering</a> do Google (gratuito online) continua sendo a base; a IA acelera as práticas, não as substitui.</div>
 
+<div class="example">
+  <h4>Exemplo: política de um agente de on-call (nível 1 → 3)</h4>
+<pre><code># agente-oncall/politica.yaml
+gatilhos: [alerta_pagerduty]
+leitura:                         # nível 0: sempre permitido
+  - prometheus, loki, kubectl get/describe/logs, histórico de deploys
+acoes:
+  - nome: reiniciar_pod
+    nivel: 3                     # autônomo limitado
+    condicoes: { estado: CrashLoopBackOff, max_por_hora: 2, namespaces: [web, workers] }
+  - nome: escalar_replicas
+    nivel: 3
+    condicoes: { min: 2, max: 10 }
+  - nome: rollback_deploy
+    nivel: 2                     # executa só após aprovação no Slack
+  - nome: alterar_banco
+    nivel: proibido
+auditoria: { canal: "#incidentes", registrar: [acao, motivo, resultado, quem_aprovou] }
+parar: "/agente pare"            # kill switch</code></pre>
+</div>
+
 <!-- ============================================================ -->
 <h2 id="recursos">Recursos para aprofundar</h2>
 <div class="resources">
@@ -260,11 +328,11 @@ processos, não pessoas). Marque [VERIFICAR] tudo que for inferência."</code></
     <li><a href="https://www.anthropic.com/engineering/building-effective-agents">Building effective agents</a></li>
   </ul></div>
   <div class="box videos"><h4>▶️ Vídeos</h4><ul>
-    <li><a href="https://www.youtube.com/results?search_query=AI+for+SRE+incident+response+LLM">Buscar: IA para SRE e incidentes</a></li>
-    <li><a href="https://www.youtube.com/results?search_query=SLO+error+budget+explained">Buscar: SLO e error budget</a></li>
-    <li><a href="https://www.youtube.com/results?search_query=DevSecOps+pipeline+semgrep+trivy">Buscar: DevSecOps com Semgrep/Trivy</a></li>
-    <li><a href="https://www.youtube.com/results?search_query=claude+code+github+actions">Buscar: Claude Code GitHub Actions</a></li>
-    <li><a href="https://www.youtube.com/@FullCycle">Full Cycle</a> — DevOps, Kubernetes, observabilidade</li>
+    <li><a href="https://www.youtube.com/watch?v=yvVWHAyr2HI">AI Agents for Incident Investigation: The Good, The Bad, and The Ugly</a> — SREcon26 Americas: o que funciona (e o que não) com agentes em incidentes.</li>
+    <li><a href="https://www.youtube.com/watch?v=iOoxtpVBQ4I">Service Levels and Error Budgets</a> — SREcon16, Chris Jones e Niall Murphy (Google): SLOs e error budget na origem.</li>
+    <li><a href="https://www.youtube.com/watch?v=BqU7P84ZaUc">Scanning code with Semgrep using GitHub Actions</a> — SAST no pipeline (tópico DevSecOps).</li>
+    <li><a href="https://www.youtube.com/watch?v=GGWinWTHqCY">Security Scanning in your CI/CD pipeline with Trivy</a> — scan de dependências, imagens e IaC no GitHub Actions.</li>
+    <li><a href="https://www.youtube.com/watch?v=R1MvBwoyHxw">Claude Code GitHub Action: Automated PR Reviews Setup</a> — configurando revisão automática de PRs com o Claude.</li>
   </ul></div>
   <div class="box courses"><h4>🎓 Cursos</h4><ul>
     <li><a href="https://anthropic.skilljar.com/">Anthropic Academy</a></li>

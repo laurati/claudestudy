@@ -35,6 +35,12 @@
 
 <!-- ============================================================ -->
 <h2 id="fundamentos">Fundamentos de Design Docs</h2>
+<div class="ficha">
+  <div class="obj"><h5>🎯 Objetivo</h5><p>Entender o que é um design doc, como estruturá-lo (por quê → o quê → como → riscos) e por que ele virou também <em>contexto</em> para agentes de IA.</p></div>
+  <div class="serve"><h5>🧩 Para que serve</h5><p>Alinhar o time antes de codar, registrar o raciocínio por trás das escolhas e dar ao agente de código instruções precisas e verificáveis.</p></div>
+  <div class="usar"><h5>✅ Quando usar</h5><p>Em mudanças que levam mais de alguns dias, afetam outros times, envolvem trade-offs relevantes ou serão implementadas por agentes.</p></div>
+  <div class="evitar"><h5>⛔ Quando evitar / cuidados</h5><p>Não escreva design doc para mudança pequena e óbvia (corrigir bug, ajustar texto). Um documento que ninguém lê nem atualiza é só burocracia.</p></div>
+</div>
 <h3>Estruturação</h3>
 <p>Um design doc responde, em ordem: <strong>por que</strong> (problema e contexto), <strong>o quê</strong> (objetivos, escopo, requisitos), <strong>como</strong> (solução proposta, alternativas, trade-offs) e <strong>e daí</strong> (riscos, plano de rollout, métricas de sucesso). Estrutura mínima:</p>
 <pre class="plain"><code>1. Contexto e problema
@@ -67,6 +73,12 @@
 
 <!-- ============================================================ -->
 <h2 id="formatos">Formatos de documentação</h2>
+<div class="ficha">
+  <div class="obj"><h5>🎯 Objetivo</h5><p>Conhecer os tipos de documento (PRD, TRD, FRD, stories, RFC, ADR, guidelines, C4, runbook, playbook, postmortem) e o papel de cada um.</p></div>
+  <div class="serve"><h5>🧩 Para que serve</h5><p>Escolher o documento certo para cada pergunta: <em>o que</em> construir (PRD), <em>como</em> (design/RFC), <em>por que decidimos</em> (ADR), <em>como operar</em> (runbook).</p></div>
+  <div class="usar"><h5>✅ Quando usar</h5><p>Use a tabela como mapa: diante de uma necessidade, pergunte "quem vai ler e para tomar qual decisão?" e escolha o formato correspondente.</p></div>
+  <div class="evitar"><h5>⛔ Quando evitar / cuidados</h5><p>Não crie todos os documentos para todo projeto. Um time pequeno pode viver com PRD enxuto + ADRs + README/CLAUDE.md.</p></div>
+</div>
 <div class="table-wrap">
 <table>
   <tr><th>Categoria</th><th>Documento</th><th>Para que serve</th></tr>
@@ -85,8 +97,28 @@
 </table>
 </div>
 
+<div class="example">
+  <h4>Exemplo: a mesma feature passando por vários documentos</h4>
+  <p><strong>Feature:</strong> "pagamento via Pix no checkout".</p>
+  <ol>
+    <li><strong>PRD:</strong> problema (40% dos clientes abandonam por não ter cartão), objetivo (aumentar conversão em 10%), escopo, não-objetivos (Pix parcelado fica fora).</li>
+    <li><strong>User stories:</strong> "Como cliente, quero pagar com QR Code Pix para concluir a compra sem cartão" + critérios de aceite.</li>
+    <li><strong>RFC:</strong> "integrar com o PSP A ou B?" — aberta para comentários por uma semana.</li>
+    <li><strong>ADR-0012:</strong> "Usaremos o PSP B por suportar webhooks idempotentes" (decisão tomada).</li>
+    <li><strong>FDD + diagrama de sequência:</strong> checkout → PSP → webhook → confirmação do pedido.</li>
+    <li><strong>Runbook:</strong> "o que fazer quando o webhook do Pix parar de chegar".</li>
+    <li><strong>Postmortem</strong> (se algo der errado): linha do tempo, causa e ações.</li>
+  </ol>
+</div>
+
 <!-- ============================================================ -->
 <h2 id="prd">Documentos de Produto (PRDs)</h2>
+<div class="ficha">
+  <div class="obj"><h5>🎯 Objetivo</h5><p>Escrever PRDs (de produto e de feature) com problema, público, objetivos, requisitos, critérios de aceite e métricas, usando IA para acelerar.</p></div>
+  <div class="serve"><h5>🧩 Para que serve</h5><p>Garantir que todos — inclusive o agente que vai implementar — entendam <em>o que</em> e <em>por que</em> antes do <em>como</em>.</p></div>
+  <div class="usar"><h5>✅ Quando usar</h5><p>No início de um produto ou de uma feature relevante; no fluxo SDD, o PRD é a entrada para a spec e o plano.</p></div>
+  <div class="evitar"><h5>⛔ Quando evitar / cuidados</h5><p>Não deixe a IA inventar requisitos: ela gera rascunho a partir das <em>suas</em> respostas. PRD sem métricas de sucesso e sem não-objetivos vira lista de desejos.</p></div>
+</div>
 <h3>PRDs de alto nível e PRDs de feature</h3>
 <ul>
   <li><strong>PRD de alto nível</strong>: visão do produto, público, problemas, objetivos de negócio, principais capacidades, roadmap macro.</li>
@@ -136,6 +168,12 @@ Marque como [SUPOSIÇÃO] tudo que você inferiu sem eu ter dito.
 
 <!-- ============================================================ -->
 <h2 id="design-arquitetura">Design e Arquitetura</h2>
+<div class="ficha">
+  <div class="obj"><h5>🎯 Objetivo</h5><p>Produzir HLD (visão do sistema) e FDD (desenho de uma feature) com apoio de IA e deep research.</p></div>
+  <div class="serve"><h5>🧩 Para que serve</h5><p>Decidir a solução técnica com alternativas e trade-offs explícitos, antes de gastar tempo implementando.</p></div>
+  <div class="usar"><h5>✅ Quando usar</h5><ul><li><strong>HLD:</strong> sistema novo ou mudança estrutural (novo serviço, troca de banco).</li><li><strong>FDD:</strong> feature que toca vários módulos ou tem riscos técnicos.</li><li><strong>Deep research:</strong> quando você não conhece bem as opções (ex.: comparar bancos vetoriais).</li></ul></div>
+  <div class="evitar"><h5>⛔ Quando evitar / cuidados</h5><p>Não aceite a primeira arquitetura que a IA sugerir: peça alternativas, trade-offs e riscos, e confira as fontes do deep research.</p></div>
+</div>
 <h3>High Level Design Document (HLD)</h3>
 <p>Visão macro da solução: contexto do sistema, componentes/containers, integrações, fluxos principais, decisões de tecnologia, requisitos não funcionais e como serão atendidos (escala, disponibilidade, segurança), estimativas de capacidade e custo.</p>
 <h3>Feature Design Doc (FDD)</h3>
@@ -159,6 +197,12 @@ Para cada decisão relevante, sugira um ADR. Não implemente código ainda.</cod
 
 <!-- ============================================================ -->
 <h2 id="diagramas">Diagramas com IA</h2>
+<div class="ficha">
+  <div class="obj"><h5>🎯 Objetivo</h5><p>Criar diagramas C4 e Mermaid (fluxo, sequência, classe, ER, estado) como código, gerados e mantidos com IA.</p></div>
+  <div class="serve"><h5>🧩 Para que serve</h5><p>Comunicar arquitetura e fluxos visualmente, com diagramas versionados no Git que a IA consegue ler e atualizar.</p></div>
+  <div class="usar"><h5>✅ Quando usar</h5><ul><li><strong>C4 Context/Container:</strong> explicar o sistema para quem chega.</li><li><strong>Sequência:</strong> integrações e fluxos com várias chamadas.</li><li><strong>ER:</strong> modelagem de dados.</li><li><strong>Estado:</strong> ciclos de vida (pedido, pagamento).</li></ul></div>
+  <div class="evitar"><h5>⛔ Quando evitar / cuidados</h5><p>Não desenhe o nível "Code" do C4 à mão (fica velho em dias — gere da IDE se precisar). Diagrama com 40 caixas não comunica: divida.</p></div>
+</div>
 <h3>Diagramas C4: System Context, Containers, Component e Code</h3>
 <p>O <a href="https://c4model.com">modelo C4</a> (Simon Brown) descreve arquitetura em quatro níveis de zoom, como um mapa:</p>
 <ol>
@@ -283,6 +327,12 @@ Use apenas componentes que EXISTEM no código; liste à parte o que você supôs
 
 <!-- ============================================================ -->
 <h2 id="adr">Architecture Decision Record (ADR)</h2>
+<div class="ficha">
+  <div class="obj"><h5>🎯 Objetivo</h5><p>Registrar decisões de arquitetura em ADRs curtos (contexto, decisão, consequências) e manter seu ciclo de vida (proposto, aceito, substituído).</p></div>
+  <div class="serve"><h5>🧩 Para que serve</h5><p>Preservar o <em>porquê</em> das decisões: novos membros e agentes de IA entendem o motivo e não "desfazem" escolhas conscientes.</p></div>
+  <div class="usar"><h5>✅ Quando usar</h5><p>Para decisões difíceis de reverter ou que alguém vai questionar depois: banco de dados, provedor de LLM, padrão de autenticação, estrutura de módulos.</p></div>
+  <div class="evitar"><h5>⛔ Quando evitar / cuidados</h5><p>Não faça ADR para escolhas triviais e reversíveis (nome de variável, lib de data). E não edite um ADR aceito — crie outro que o substitui.</p></div>
+</div>
 <h3>Estrutura clássica de um ADR e MADRs</h3>
 <p>Formato clássico de Michael Nygard: <strong>Título, Status, Contexto, Decisão, Consequências</strong>. O <a href="https://adr.github.io/madr/">MADR</a> (Markdown Any Decision Records) acrescenta drivers de decisão, opções consideradas e prós/contras de cada uma.</p>
 <div class="example">
@@ -333,6 +383,12 @@ Verifique em docs/adr/ se algum ADR existente é afetado e, se for, indique
 
 <!-- ============================================================ -->
 <h2 id="guidelines">Engineering Guidelines</h2>
+<div class="ficha">
+  <div class="obj"><h5>🎯 Objetivo</h5><p>Escrever engineering guidelines (stack, padrões de código, testes, PRs, review) que valham para humanos e agentes.</p></div>
+  <div class="serve"><h5>🧩 Para que serve</h5><p>Tornar o "jeito do time" explícito para que a IA gere código no padrão do projeto e o review foque no que importa.</p></div>
+  <div class="usar"><h5>✅ Quando usar</h5><p>Ao iniciar um projeto, ao receber pessoas novas e sempre que um mesmo comentário de review se repetir.</p></div>
+  <div class="evitar"><h5>⛔ Quando evitar / cuidados</h5><p>Não escreva no guideline o que uma ferramenta já garante (formatter, linter): automatize com pre-commit e economize contexto.</p></div>
+</div>
 <h3>Guidelines na era da IA</h3>
 <p>Guidelines viram <strong>instruções executáveis</strong> para agentes: o que antes era um wiki que ninguém lia agora é carregado em todo prompt. Por isso devem ser curtas, específicas e verificáveis. E o que puder ser checado por ferramenta (lint, formatação, tipos) deve ser checado por ferramenta — não por instrução.</p>
 <h3>Seções sugeridas de um guideline</h3>
@@ -378,6 +434,12 @@ Para cada regra, cite 1 exemplo do código. Aponte inconsistências encontradas
 
 <!-- ============================================================ -->
 <h2 id="automacao">Automação da documentação</h2>
+<div class="ficha">
+  <div class="obj"><h5>🎯 Objetivo</h5><p>Automatizar a geração e a manutenção da documentação com comandos, skills, CI e agentes agendados.</p></div>
+  <div class="serve"><h5>🧩 Para que serve</h5><p>Evitar documentação desatualizada — que para a IA é contexto errado — sem depender da memória das pessoas.</p></div>
+  <div class="usar"><h5>✅ Quando usar</h5><p>Em times com documentação como contexto (CLAUDE.md, ADRs, OpenAPI) e em projetos com muitas mudanças por semana.</p></div>
+  <div class="evitar"><h5>⛔ Quando evitar / cuidados</h5><p>Não publique documentação gerada sem revisão humana. E não gere doc "de enfeite" (comentário que repete o código).</p></div>
+</div>
 <h3>Geração automatizada de documentações e criação de assistentes de IA</h3>
 <ul>
   <li>Docs de API geradas a partir de OpenAPI/código; changelogs a partir de commits convencionais.</li>
@@ -410,6 +472,21 @@ jobs:
 </div>
 <p>Ver <a href="https://code.claude.com/docs/en/github-actions">Claude Code GitHub Actions</a>.</p>
 
+<div class="example">
+  <h4>Exemplo: comando reutilizável para gerar ADR (Claude Code)</h4>
+<pre><code>&lt;!-- .claude/commands/adr.md --&gt;
+---
+description: Cria um novo ADR a partir da discussão atual
+argument-hint: [título da decisão]
+---
+Crie um ADR em docs/adr/ com o próximo número disponível e o título "$ARGUMENTS".
+1. Use o template docs/adr/0000-template.md (MADR).
+2. Contexto e alternativas: extraia da conversa e do código relevante; não invente.
+3. Liste consequências positivas e negativas.
+4. Se substituir um ADR anterior, atualize o status dele para "Substituído por ADR-XXXX".
+5. Status inicial: "Proposto". Mostre o arquivo e pergunte se pode salvar.</code></pre>
+</div>
+
 <!-- ============================================================ -->
 <h2 id="recursos">Recursos para aprofundar</h2>
 <div class="resources">
@@ -427,10 +504,9 @@ jobs:
     <li><a href="https://github.com/github/spec-kit">GitHub Spec Kit</a> (spec-driven)</li>
   </ul></div>
   <div class="box videos"><h4>▶️ Vídeos</h4><ul>
-    <li><a href="https://www.youtube.com/results?search_query=c4+model+simon+brown+visualising+software+architecture">Buscar: Simon Brown — Visualising software architecture (C4)</a></li>
-    <li><a href="https://www.youtube.com/results?search_query=architecture+decision+records+ADR+explained">Buscar: ADRs explicados</a></li>
-    <li><a href="https://www.youtube.com/results?search_query=design+docs+at+google+how+to+write">Buscar: como escrever design docs</a></li>
-    <li><a href="https://www.youtube.com/results?search_query=PRD+com+IA+product+requirements+document">Buscar: PRD com IA</a></li>
+    <li><a href="https://www.youtube.com/watch?v=x2-rSnhpw0g">Visualising software architecture with the C4 model</a> — Simon Brown, criador do C4 (Agile on the Beach 2019).</li>
+    <li><a href="https://www.youtube.com/watch?v=LMBqGPLvonU">Lesson 55 — Architecture Decision Records</a> — Mark Richards: estrutura de um ADR e como usá-lo no dia a dia.</li>
+    <li><a href="https://www.youtube.com/watch?v=t3JdHmUmXTY">Architectural Decision Record (ADR) Introduction</a> — Lab49 TechTalk: história dos ADRs e como adotá-los num projeto.</li>
   </ul></div>
   <div class="box courses"><h4>🎓 Cursos</h4><ul>
     <li><a href="https://anthropic.skilljar.com/">Anthropic Academy</a> — Claude Code in Action</li>

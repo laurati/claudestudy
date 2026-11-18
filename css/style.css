@@ -226,6 +226,24 @@ pre .copy-btn:hover { opacity: 1; }
 .objectives ul { list-style: none; padding-left: 0; }
 .objectives li::before { content: "✓ "; color: var(--accent); font-weight: 800; }
 
+/* Ficha do tópico: objetivo / para que serve / quando usar / quando evitar */
+.ficha {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 10px;
+  margin: 14px 0 20px;
+}
+.ficha > div {
+  background: var(--card-bg); border: 1px solid var(--border); border-top: 4px solid var(--accent);
+  border-radius: var(--radius); padding: 10px 14px; font-size: 15.5px;
+}
+.ficha h5 { margin: 0 0 4px; font-size: 13px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); }
+.ficha p { margin: 0; }
+.ficha ul { margin: 0; padding-left: 18px; }
+.ficha .obj { border-top-color: #2196f3; }
+.ficha .serve { border-top-color: var(--accent); }
+.ficha .usar { border-top-color: #ff9800; }
+.ficha .evitar { border-top-color: #f44336; }
+.ficha .full { grid-column: 1 / -1; }
+
 /* Tabelas */
 table { border-collapse: collapse; width: 100%; margin: 16px 0; font-size: 15.5px; }
 th, td { border: 1px solid var(--border); padding: 8px 12px; text-align: left; vertical-align: top; }

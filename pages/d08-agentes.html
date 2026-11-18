@@ -28,6 +28,12 @@
 
 <!-- ============================================================ -->
 <h2 id="fundamentos">Fundamentos de Agentes</h2>
+<div class="ficha">
+  <div class="obj"><h5>🎯 Objetivo</h5><p>Entender o que é um agente (LLM que decide os próprios passos em loop com ferramentas), como ele difere de um workflow e seus tipos e ciclo de vida.</p></div>
+  <div class="serve"><h5>🧩 Para que serve</h5><p>Saber quando um agente é a solução certa e quando um workflow fixo é mais barato, rápido e confiável.</p></div>
+  <div class="usar"><h5>✅ Quando usar</h5><p>Tarefas abertas, de vários passos, em que o caminho depende do que se descobre no meio (investigar um problema, pesquisar e compilar, atender casos variados).</p></div>
+  <div class="evitar"><h5>⛔ Quando evitar / cuidados</h5><p>Processos previsíveis ("sempre faça A, depois B, depois C") ficam melhores como workflow em código. Agente para tudo = custo e imprevisibilidade sem necessidade.</p></div>
+</div>
 <h3>O que são agentes e suas características</h3>
 <p>Um <strong>agente</strong> é um sistema em que um LLM <strong>dirige dinamicamente o próprio processo</strong>: decide quais ferramentas usar, em que ordem, e quando parar, com base no feedback do ambiente. Características:</p>
 <ul>
@@ -72,8 +78,25 @@ Objetivo ─►  LLM decide ─► chama ferramenta ─► observa resultado ─
   <li><strong>Reflexivos</strong>: avaliam e criticam a própria saída antes de entregar (reflection / evaluator-optimizer).</li>
 </ul>
 
+<div class="example">
+  <h4>Exemplo: workflow ou agente?</h4>
+  <div class="table-wrap"><table>
+    <tr><th>Tarefa</th><th>Escolha</th><th>Motivo</th></tr>
+    <tr><td>Toda nota fiscal recebida: extrair dados → validar → lançar no ERP</td><td>Workflow</td><td>Passos sempre iguais; o LLM só extrai</td></tr>
+    <tr><td>"Por que as vendas caíram em Recife na semana passada?"</td><td>Agente</td><td>Precisa consultar fontes diferentes conforme o que encontra</td></tr>
+    <tr><td>Responder dúvida sobre política de troca</td><td>Workflow (RAG)</td><td>Buscar trecho → responder</td></tr>
+    <tr><td>Resolver o problema do cliente de ponta a ponta (consultar, trocar, reembolsar)</td><td>Agente com aprovação</td><td>Caminho varia por caso; ações sensíveis com confirmação</td></tr>
+  </table></div>
+</div>
+
 <!-- ============================================================ -->
 <h2 id="frameworks">Visão Geral de Frameworks</h2>
+<div class="ficha">
+  <div class="obj"><h5>🎯 Objetivo</h5><p>Comparar estilos de agentes e os principais frameworks: LangChain, LangGraph, CrewAI, Google ADK (e o Claude Agent SDK).</p></div>
+  <div class="serve"><h5>🧩 Para que serve</h5><p>Escolher o framework pela necessidade: grafo de estados explícito, papéis colaborando, integração com Google Cloud, harness pronto de agente de código.</p></div>
+  <div class="usar"><h5>✅ Quando usar</h5><ul><li><strong>LangGraph:</strong> fluxos com estados, ciclos e checkpoints controlados.</li><li><strong>CrewAI:</strong> times de agentes com papéis.</li><li><strong>ADK:</strong> multiagente com runtime, UI de debug e deploy no Google Cloud.</li><li><strong>SDK direto:</strong> agente simples com poucas tools.</li></ul></div>
+  <div class="evitar"><h5>⛔ Quando evitar / cuidados</h5><p>Não adote um framework pesado para um loop de tool use de 50 linhas. Abstrações demais escondem prompts e dificultam a depuração.</p></div>
+</div>
 <h3>Estilos de agentes: stateful, conversacional, por papéis e com planejamento</h3>
 <ul>
   <li><strong>Stateful (grafo de estados)</strong>: fluxo modelado como grafo com estado explícito e checkpoints — LangGraph.</li>
@@ -145,6 +168,12 @@ print(Crew(agents=[pesquisador, redator], tasks=[t1, t2]).kickoff())</code></pre
 
 <!-- ============================================================ -->
 <h2 id="adk-primeiro">Criando seu Primeiro Agente com ADK</h2>
+<div class="ficha">
+  <div class="obj"><h5>🎯 Objetivo</h5><p>Configurar o ambiente e criar o primeiro agente com o Google ADK: estrutura de pastas, modelo, instruções e execução.</p></div>
+  <div class="serve"><h5>🧩 Para que serve</h5><p>Ter um agente funcionando de ponta a ponta para experimentar ferramentas, subagentes e sessões nos próximos tópicos.</p></div>
+  <div class="usar"><h5>✅ Quando usar</h5><p>Ao aprender o ADK ou iniciar um projeto de agente que deve rodar no ecossistema Google (Vertex AI, Cloud Run).</p></div>
+  <div class="evitar"><h5>⛔ Quando evitar / cuidados</h5><p>Não versione a API key no repositório (<code>.env</code> no <code>.gitignore</code>). Comece com um agente pequeno antes de adicionar subagentes.</p></div>
+</div>
 <h3>Panorama de frameworks e escolha do ADK (Google)</h3>
 <p>O <a href="https://google.github.io/adk-docs/">Agent Development Kit (ADK)</a> é o framework open source do Google para construir, avaliar e implantar agentes. Pontos fortes: estrutura "code-first" clara, interface de desenvolvimento (<code>adk web</code>), multiagente nativo, sessões/estado bem definidos, integração com A2A e Vertex AI. O curso o usa como framework principal pelos conceitos explícitos de runtime.</p>
 <h3>Preparação do ambiente e configuração da Google API</h3>
@@ -197,6 +226,12 @@ adk run meu_agente # conversa pelo terminal</code></pre>
 
 <!-- ============================================================ -->
 <h2 id="tools">Tools: Dando Capacidades ao Agente</h2>
+<div class="ficha">
+  <div class="obj"><h5>🎯 Objetivo</h5><p>Criar boas tools (nome, descrição, parâmetros, retorno), entender o fluxo de invocação e exigir aprovação para ações sensíveis.</p></div>
+  <div class="serve"><h5>🧩 Para que serve</h5><p>Dar capacidades reais ao agente — consultar, calcular, agir — de forma que o modelo saiba <em>quando</em> e <em>como</em> usar cada uma.</p></div>
+  <div class="usar"><h5>✅ Quando usar</h5><p>Sempre que o agente precisar de dados ou ações fora do modelo. Aprovação humana para tudo que for irreversível ou custar dinheiro.</p></div>
+  <div class="evitar"><h5>⛔ Quando evitar / cuidados</h5><p>Tools com nomes ambíguos, sobrepostas ou que devolvem JSON gigante confundem o modelo. Não exponha uma tool genérica tipo <code>executar_sql(query)</code> em produção.</p></div>
+</div>
 <h3>O que é uma Tool e como criar uma boa Tool</h3>
 <p>Uma <strong>tool</strong> é uma função que o agente pode chamar. No ADK, funções Python viram tools automaticamente: o nome, a <em>docstring</em> e os tipos dos parâmetros viram a descrição que o modelo lê. Boas práticas (válidas para qualquer framework — ver <a href="https://www.anthropic.com/engineering/writing-tools-for-agents">Writing effective tools for agents</a>):</p>
 <ul>
@@ -229,6 +264,12 @@ root_agent = Agent(..., tools=[emitir_reembolso], before_tool_callback=checar_pe
 
 <!-- ============================================================ -->
 <h2 id="subagentes">Subagentes e Coordenação</h2>
+<div class="ficha">
+  <div class="obj"><h5>🎯 Objetivo</h5><p>Dividir o trabalho entre agentes especializados: transferência de controle, coordenador × especialistas, workflows sequenciais, paralelos e em loop.</p></div>
+  <div class="serve"><h5>🧩 Para que serve</h5><p>Manter cada agente com instruções e ferramentas focadas, o que melhora a precisão e permite reaproveitar especialistas.</p></div>
+  <div class="usar"><h5>✅ Quando usar</h5><p>Quando um único agente tem ferramentas demais, domínios diferentes (vendas × suporte × financeiro) ou etapas que podem rodar em paralelo.</p></div>
+  <div class="evitar"><h5>⛔ Quando evitar / cuidados</h5><p>Cada agente a mais adiciona chamadas ao LLM, latência e pontos de falha. Com 3–5 tools, um agente só costuma bastar.</p></div>
+</div>
 <h3>Fundamentos e primeiros exemplos de subagentes</h3>
 <p>Em vez de um agente gigante com 30 ferramentas, crie agentes especializados e um coordenador. Cada subagente tem instrução e ferramentas próprias — menos confusão, melhor desempenho.</p>
 <div class="example">
@@ -271,6 +312,12 @@ root_agent = Agent(name="coordenador", model="gemini-2.5-flash",
 
 <!-- ============================================================ -->
 <h2 id="runtime">Sessões, Aplicações e Execução (Runtime do ADK)</h2>
+<div class="ficha">
+  <div class="obj"><h5>🎯 Objetivo</h5><p>Entender o runtime do ADK: sessões, estado, apps, runners, eventos assíncronos e persistência.</p></div>
+  <div class="serve"><h5>🧩 Para que serve</h5><p>Colocar o agente numa aplicação web real com várias conversas simultâneas, memória por usuário e histórico persistido.</p></div>
+  <div class="usar"><h5>✅ Quando usar</h5><p>Ao sair do <code>adk web</code> de desenvolvimento para uma API/aplicação em produção.</p></div>
+  <div class="evitar"><h5>⛔ Quando evitar / cuidados</h5><p>Sessões em memória somem a cada restart — em produção use um serviço de sessão persistente. Não guarde dados sensíveis no estado sem necessidade.</p></div>
+</div>
 <h3>Arquitetura do runtime do ADK: sessões, apps e runners</h3>
 <ul>
   <li><strong>Agent</strong>: a lógica (instrução, modelo, ferramentas).</li>
@@ -332,12 +379,37 @@ triador = Agent(name="triador", model="gemini-2.5-flash",
 
 <!-- ============================================================ -->
 <h2 id="observabilidade">Observabilidade do Agente</h2>
+<div class="ficha">
+  <div class="obj"><h5>🎯 Objetivo</h5><p>Acompanhar o que o agente fez e por quê: eventos, chamadas de ferramentas, transferências, tokens e latência, em desenvolvimento e produção.</p></div>
+  <div class="serve"><h5>🧩 Para que serve</h5><p>Depurar comportamentos estranhos, controlar custo e melhorar instruções com base em execuções reais.</p></div>
+  <div class="usar"><h5>✅ Quando usar</h5><p>Desde o primeiro protótipo (painel do ADK) e obrigatoriamente em produção (traces via OpenTelemetry/LangSmith/Langfuse).</p></div>
+  <div class="evitar"><h5>⛔ Quando evitar / cuidados</h5><p>Não registre dados pessoais ou segredos nos traces sem mascarar. Logs sem ID de sessão/trace tornam impossível reconstruir uma execução.</p></div>
+</div>
 <h3>Painel do ADK e visualização de execução em tempo real</h3>
 <p>O <code>adk web</code> mostra, para cada turno, a sequência de eventos, a árvore de chamadas entre agentes, argumentos e retornos das ferramentas e o estado da sessão. É o equivalente ao "debugger" do agente.</p>
 <h3>Rastreamento de ações, decisões e uso de ferramentas</h3>
 <p>Em produção, exporte traces via OpenTelemetry (o ADK tem integração; também Cloud Trace, LangSmith, Langfuse, Arize Phoenix). Registre por execução: agente, ferramentas chamadas, latência, tokens, erros, transferências entre agentes.</p>
 <h3>Registro de histórico e refinamento do comportamento</h3>
 <p>Transforme sessões reais em <strong>datasets de avaliação</strong>: conversas que deram errado viram casos de teste. O ADK tem suporte a avaliação (<code>adk eval</code>) com arquivos de casos que verificam trajetória (ferramentas esperadas) e resposta final. Ciclo: observar → identificar falha → ajustar instrução/tool → rodar eval → implantar.</p>
+
+<h3>O que olhar em um trace</h3>
+<div class="example">
+  <h4>Exemplo: lendo um trace para corrigir um agente</h4>
+<pre class="plain"><code>trace 7f3a…  usuário: "Quero trocar o tamanho do tênis do pedido 8812"
+├─ coordenador          1.2s  420 tok   → transfer_to_agent(suporte_pedidos)
+├─ suporte_pedidos      0.9s  610 tok   → buscar_pedido(8812)            ok
+├─ suporte_pedidos      1.1s  700 tok   → buscar_pedido(8812)            ok   ← repetido!
+├─ suporte_pedidos      1.4s  820 tok   → cancelar_pedido(8812)          ← ação errada!
+└─ resposta: "Seu pedido foi cancelado."</code></pre>
+  <p><strong>Diagnóstico:</strong> o agente não tem uma tool de troca e "improvisou" com cancelar; também chamou <code>buscar_pedido</code> duas vezes. <strong>Correções:</strong> criar a tool <code>solicitar_troca</code>, exigir confirmação em <code>cancelar_pedido</code> e instruir: "se não houver ferramenta para o pedido do cliente, encaminhe para humano". Depois, adicione esse caso ao dataset de avaliação.</p>
+</div>
+<h3>Métricas que valem um dashboard</h3>
+<ul>
+  <li>Taxa de conclusão da tarefa e de escalonamento para humano.</li>
+  <li>Passos (chamadas de tool) por tarefa e chamadas repetidas.</li>
+  <li>Tokens e custo por conversa; latência p50/p95.</li>
+  <li>Erros de ferramenta por tool e ações que exigiram aprovação/rejeição.</li>
+</ul>
 
 <!-- ============================================================ -->
 <h2 id="recursos">Recursos para aprofundar</h2>
@@ -358,11 +430,10 @@ triador = Agent(name="triador", model="gemini-2.5-flash",
     <li><a href="https://docs.smith.langchain.com">LangSmith</a> (observabilidade/eval)</li>
   </ul></div>
   <div class="box videos"><h4>▶️ Vídeos</h4><ul>
-    <li><a href="https://www.youtube.com/@GoogleCloudTech">Google Cloud Tech</a> — tutoriais de ADK</li>
-    <li><a href="https://www.youtube.com/results?search_query=google+ADK+agent+development+kit+tutorial">Buscar: Google ADK tutorial</a></li>
-    <li><a href="https://www.youtube.com/results?search_query=langgraph+tutorial+agents">Buscar: LangGraph agents</a></li>
-    <li><a href="https://www.youtube.com/results?search_query=crewai+tutorial+multi+agent">Buscar: CrewAI multi-agent</a></li>
-    <li><a href="https://www.youtube.com/results?search_query=anthropic+building+effective+agents+talk">Buscar: Building effective agents (talk)</a></li>
+    <li><a href="https://www.youtube.com/watch?v=D7_ipDqhtwk">How We Build Effective Agents</a> — Barry Zhang (Anthropic): quando construir um agente e como mantê-lo simples.</li>
+    <li><a href="https://www.youtube.com/watch?v=44C8u0CDtSo">Getting started with Agent Development Kit</a> — primeiro agente com o Google ADK, do zero.</li>
+    <li><a href="https://www.youtube.com/watch?v=29XE10U6ooc">Introduction to LangGraph</a> — LangChain Academy: apresentação do curso gratuito de LangGraph.</li>
+    <li><a href="https://www.youtube.com/watch?v=G42J2MSKyc8">CrewAI Tutorial</a> — crash course: agentes, tarefas e crews, com um projeto completo.</li>
   </ul></div>
   <div class="box courses"><h4>🎓 Cursos</h4><ul>
     <li><a href="https://huggingface.co/learn/agents-course">Hugging Face Agents Course</a> (gratuito, com certificado)</li>

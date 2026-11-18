@@ -35,6 +35,12 @@
 
 <!-- ============================================================ -->
 <h2 id="tool-calling">Protocolos de comunicação × Tool Calling</h2>
+<div class="ficha">
+  <div class="obj"><h5>🎯 Objetivo</h5><p>Entender a diferença entre o modelo <em>pedir</em> para chamar uma função (tool calling) e um <em>protocolo</em> que padroniza como ferramentas são oferecidas a qualquer aplicação de IA.</p></div>
+  <div class="serve"><h5>🧩 Para que serve</h5><p>Decidir onde a integração deve morar: dentro da sua aplicação (tool calling direto) ou num servidor reutilizável por vários clientes (MCP).</p></div>
+  <div class="usar"><h5>✅ Quando usar</h5><ul><li>Tool calling direto: a ferramenta só existe para <em>uma</em> aplicação (ex.: "consultar pedido" no seu chatbot).</li><li>Protocolo (MCP): a mesma integração vai servir Claude Code, Cursor, um agente interno etc.</li></ul></div>
+  <div class="evitar"><h5>⛔ Quando evitar / cuidados</h5><p>Não crie um servidor MCP para uma função de 10 linhas usada por um único sistema — é infraestrutura a mais para manter. E lembre: protocolo não substitui uma boa descrição de tool.</p></div>
+</div>
 <p><strong>Tool calling</strong> (function calling) é um recurso do <em>modelo/API</em>: você descreve funções no request e o modelo pede para chamá-las. Mas cada aplicação precisa implementar cada integração do zero — N aplicações × M ferramentas = N×M integrações.</p>
 <p>Um <strong>protocolo</strong> padroniza a conversa entre aplicações de IA e provedores de capacidades. Com MCP, quem escreve um servidor (ex.: GitHub) o faz uma vez, e qualquer cliente compatível (Claude, Cursor, Copilot, ADK…) pode usá-lo: N + M em vez de N×M.</p>
 <div class="table-wrap">
@@ -48,8 +54,24 @@
 </div>
 <p>MCP <em>usa</em> tool calling por baixo: o cliente converte as tools do servidor em definições de tool para o modelo.</p>
 
+<div class="example">
+  <h4>Exemplo prático: a mesma integração, duas abordagens</h4>
+  <p><strong>Cenário:</strong> três aplicações (chatbot de suporte, Claude Code dos devs e um agente de vendas) precisam consultar o status de pedidos.</p>
+  <ul>
+    <li><strong>Só tool calling:</strong> cada aplicação define sua tool <code>consultar_pedido</code>, implementa a chamada à API, autenticação e tratamento de erro. Três implementações para manter; quando a API muda, três correções.</li>
+    <li><strong>Com MCP:</strong> o time de pedidos publica <em>um</em> servidor MCP <code>pedidos</code> com a tool <code>consultar_pedido</code>. As três aplicações apenas se conectam a ele. Mudou a API? Corrige-se o servidor.</li>
+  </ul>
+  <p><strong>Analogia:</strong> tool calling é cada aparelho vir com seu próprio carregador; MCP é a tomada USB-C — o fabricante do periférico implementa uma vez e funciona em qualquer aparelho compatível.</p>
+</div>
+
 <!-- ============================================================ -->
 <h2 id="mcp-fundamentos">Fundamentos do MCP (Tools, Resources e Prompts)</h2>
+<div class="ficha">
+  <div class="obj"><h5>🎯 Objetivo</h5><p>Conhecer as três primitivas do MCP (tools, resources, prompts), os papéis (host, cliente, servidor) e os transportes (stdio, Streamable HTTP).</p></div>
+  <div class="serve"><h5>🧩 Para que serve</h5><p>Saber o que expor em cada primitiva: <strong>tools</strong> = ações que o modelo decide chamar; <strong>resources</strong> = dados que a aplicação/usuário anexa como contexto; <strong>prompts</strong> = templates que o usuário escolhe (viram comandos <code>/</code>).</p></div>
+  <div class="usar"><h5>✅ Quando usar</h5><p>Ao desenhar qualquer servidor MCP ou ao avaliar um servidor de terceiros antes de instalá-lo.</p></div>
+  <div class="evitar"><h5>⛔ Quando evitar / cuidados</h5><p>Não exponha tudo como tool: ler um arquivo de configuração estático é melhor como resource (não gasta uma volta de raciocínio do modelo). Tools com efeitos colaterais devem pedir confirmação.</p></div>
+</div>
 <p>O <a href="https://modelcontextprotocol.io">Model Context Protocol</a> foi criado pela Anthropic (2024) e hoje é um padrão aberto adotado amplamente. Papéis:</p>
 <ul>
   <li><strong>Host</strong>: a aplicação de IA (Claude Desktop, Claude Code, IDE).</li>
@@ -89,11 +111,42 @@
 
 <!-- ============================================================ -->
 <h2 id="mcp-servidores">Servidores MCP e Docker MCP Toolkit</h2>
+<div class="ficha">
+  <div class="obj"><h5>🎯 Objetivo</h5><p>Saber encontrar, avaliar e rodar servidores MCP prontos, inclusive de forma isolada com o Docker MCP Toolkit.</p></div>
+  <div class="serve"><h5>🧩 Para que serve</h5><p>Dar "superpoderes" ao assistente sem escrever código: acesso ao banco, ao GitHub, ao navegador, à documentação atualizada de bibliotecas.</p></div>
+  <div class="usar"><h5>✅ Quando usar</h5><p>Quando a integração já existe pronta e é mantida por uma fonte confiável (fornecedor oficial, catálogo verificado).</p></div>
+  <div class="evitar"><h5>⛔ Quando evitar / cuidados</h5><p>Servidores de origem desconhecida rodando via <code>npx</code> com suas credenciais têm o mesmo risco de instalar um pacote aleatório. Prefira imagens verificadas e credenciais somente leitura.</p></div>
+</div>
 <p>Há milhares de servidores prontos: sistemas de arquivos, Git/GitHub, bancos (Postgres, SQLite), navegadores (Playwright), Slack, Notion, Figma, Sentry, Stripe, documentação (Context7)… Consulte o registro oficial no site do MCP e o <a href="https://docs.docker.com/ai/mcp-catalog-and-toolkit/">Docker MCP Catalog</a>.</p>
 <p>O <strong>Docker MCP Toolkit</strong> (no Docker Desktop) roda servidores como containers isolados, gerencia segredos e expõe tudo por um <em>gateway</em> único ao qual você conecta seus clientes — menos configuração e mais isolamento do que rodar <code>npx</code> de pacotes diretamente na máquina.</p>
 
+<h3>Como escolher e avaliar um servidor MCP</h3>
+<ol>
+  <li><strong>Origem:</strong> é oficial do fornecedor (GitHub, Sentry, Stripe…) ou está num catálogo verificado? Quantas pessoas usam? Tem manutenção recente?</li>
+  <li><strong>Escopo:</strong> quais tools ele expõe? Alguma escreve/apaga dados? Dá para desativar tools individuais?</li>
+  <li><strong>Credenciais:</strong> crie um token só para ele, com o mínimo de permissão (ex.: token do GitHub só leitura em 1 repositório).</li>
+  <li><strong>Isolamento:</strong> rode em container (Docker MCP Toolkit) quando possível.</li>
+</ol>
+<div class="example">
+  <h4>Exemplo: servidores úteis por tipo de tarefa</h4>
+  <div class="table-wrap"><table>
+    <tr><th>Tarefa</th><th>Servidor</th><th>O que você ganha</th></tr>
+    <tr><td>Usar uma biblioteca nova sem alucinação de API</td><td>Context7</td><td>Documentação atualizada da versão certa, injetada no contexto</td></tr>
+    <tr><td>Testar o front-end que a IA acabou de escrever</td><td>Playwright</td><td>O agente abre o navegador, clica, tira screenshot e corrige</td></tr>
+    <tr><td>Escrever SQL/migrações</td><td>Postgres (somente leitura)</td><td>O agente lê o schema real em vez de inventar colunas</td></tr>
+    <tr><td>Investigar um erro em produção</td><td>Sentry</td><td>Stack trace e contexto do erro direto na conversa</td></tr>
+    <tr><td>Abrir PR, ler issues</td><td>GitHub</td><td>Fluxo completo sem sair do agente</td></tr>
+  </table></div>
+</div>
+
 <!-- ============================================================ -->
 <h2 id="mcp-pratica">MCPs na prática, incluindo Resources e Prompts</h2>
+<div class="ficha">
+  <div class="obj"><h5>🎯 Objetivo</h5><p>Usar MCP no dia a dia: adicionar servidores ao cliente, referenciar resources com <code>@</code>, chamar prompts como comandos e usar MCP direto pela API.</p></div>
+  <div class="serve"><h5>🧩 Para que serve</h5><p>Trazer contexto externo (issue, schema do banco, página da doc) para a conversa sem copiar e colar, e transformar fluxos repetidos em comandos.</p></div>
+  <div class="usar"><h5>✅ Quando usar</h5><p>Sempre que você se pegar colando o mesmo tipo de informação no chat (tickets, logs, schema).</p></div>
+  <div class="evitar"><h5>⛔ Quando evitar / cuidados</h5><p>Cada servidor ativo adiciona descrições de tools ao contexto. Muitos servidores ligados ao mesmo tempo = mais tokens e mais chance de o modelo escolher a tool errada. Ative só o necessário por projeto.</p></div>
+</div>
 <div class="example">
   <h4>Exemplo: configurando servidores no Claude Code</h4>
 <pre><code># stdio
@@ -124,8 +177,23 @@ resp = client.beta.messages.create(
 )</code></pre>
 </div>
 
+<div class="example">
+  <h4>Exemplo de sessão: issue → código, usando as três primitivas</h4>
+<pre class="plain"><code>&gt; /mcp__github__resumir_issue 482          ← PROMPT do servidor (template)
+&gt; Implemente a correção. Use @postgres:schema://orders como referência.   ← RESOURCE
+  (o agente chama a TOOL github.get_issue, lê o schema, edita o código,
+   roda os testes e chama a TOOL github.create_pull_request)</code></pre>
+  <p>Repare na divisão: <strong>você</strong> escolheu o prompt e o resource; <strong>o modelo</strong> decidiu quando chamar as tools.</p>
+</div>
+
 <!-- ============================================================ -->
 <h2 id="mcp-desenvolvimento">Desenvolvimento de servidores MCP</h2>
+<div class="ficha">
+  <div class="obj"><h5>🎯 Objetivo</h5><p>Construir um servidor MCP próprio com o SDK oficial (Python/TypeScript), com tools bem descritas, validação e tratamento de erro.</p></div>
+  <div class="serve"><h5>🧩 Para que serve</h5><p>Expor um sistema interno da sua empresa (ERP, API de pedidos, base de conhecimento) uma única vez para todos os clientes de IA.</p></div>
+  <div class="usar"><h5>✅ Quando usar</h5><p>Quando não existe servidor pronto, quando o servidor existente expõe demais (você quer um subconjunto seguro) ou quando precisa aplicar regras de negócio/permissões.</p></div>
+  <div class="evitar"><h5>⛔ Quando evitar / cuidados</h5><p>Não espelhe sua API REST 1:1 ("um endpoint = uma tool"). Modele tools pela <em>tarefa</em> do usuário (ex.: <code>resumo_do_cliente</code> em vez de 5 chamadas GET) e devolva respostas enxutas.</p></div>
+</div>
 <p>SDKs oficiais existem para Python, TypeScript, Go, Java, C#, Kotlin e outras. Em Python, o <strong>FastMCP</strong> (incluído no SDK) transforma funções decoradas em primitivas.</p>
 <div class="example">
   <h4>Exemplo: servidor MCP com tools, resources e prompts (Python)</h4>
@@ -166,6 +234,12 @@ claude mcp add pedidos -- python servidor.py</code></pre>
 
 <!-- ============================================================ -->
 <h2 id="mcp-deploy">Deploy e distribuição utilizando Docker</h2>
+<div class="ficha">
+  <div class="obj"><h5>🎯 Objetivo</h5><p>Empacotar e distribuir servidores MCP em containers, localmente (stdio) ou remotamente (HTTP), com segredos e versionamento.</p></div>
+  <div class="serve"><h5>🧩 Para que serve</h5><p>Garantir que o servidor rode igual na máquina de todos os devs e em produção, isolado do sistema de arquivos e da rede do host.</p></div>
+  <div class="usar"><h5>✅ Quando usar</h5><p>Ao compartilhar o servidor com o time/empresa, ao publicar num catálogo ou ao rodar servidores remotos acessados por vários usuários.</p></div>
+  <div class="evitar"><h5>⛔ Quando evitar / cuidados</h5><p>Servidores remotos precisam de autenticação (OAuth) e autorização por usuário — nunca exponha na internet um servidor com credenciais de serviço compartilhadas e sem controle de acesso.</p></div>
+</div>
 <div class="example">
   <h4>Exemplo: Dockerfile para o servidor</h4>
 <pre><code>FROM python:3.12-slim
@@ -184,6 +258,12 @@ claude mcp add pedidos -- docker run -i --rm minhaorg/mcp-pedidos:1.0</code></pr
 
 <!-- ============================================================ -->
 <h2 id="a2a-fundamentos">Google A2A (Agent to Agent): fundamentos</h2>
+<div class="ficha">
+  <div class="obj"><h5>🎯 Objetivo</h5><p>Entender o que o A2A resolve: agentes de times, fornecedores e frameworks diferentes colaborando sem expor sua implementação.</p></div>
+  <div class="serve"><h5>🧩 Para que serve</h5><p>Delegar uma tarefa inteira a outro agente (que tem suas próprias ferramentas, memória e regras) como se fosse um colega, e não chamar uma função.</p></div>
+  <div class="usar"><h5>✅ Quando usar</h5><p>Quando o "outro lado" é autônomo, demora, pode pedir mais informação ou pertence a outro time/empresa (ex.: agente de viagens de um fornecedor).</p></div>
+  <div class="evitar"><h5>⛔ Quando evitar / cuidados</h5><p>Se o que você precisa é uma operação determinística (consultar saldo), use uma tool/MCP — A2A acrescenta latência, ciclo de vida de task e custo de outro LLM.</p></div>
+</div>
 <p>O <a href="https://a2a-protocol.org">A2A</a> é um protocolo aberto (iniciado pelo Google em 2025, hoje sob a Linux Foundation) para que agentes <strong>opacos</strong> — construídos com frameworks e fornecedores diferentes, sem expor sua lógica interna, memória ou ferramentas — colaborem como pares. Baseado em padrões web: HTTP, JSON-RPC 2.0 e SSE para streaming (com variantes gRPC/REST nas versões mais novas), além de push notifications via webhook para tarefas longas.</p>
 <div class="table-wrap">
 <table>
@@ -194,8 +274,25 @@ claude mcp add pedidos -- docker run -i --rm minhaorg/mcp-pedidos:1.0</code></pr
 </table>
 </div>
 
+<p><strong>Em termos simples:</strong> MCP é como dar uma <em>ferramenta</em> a um funcionário (uma calculadora, acesso ao sistema). A2A é como <em>pedir ajuda a outro departamento</em>: você explica o que precisa, eles trabalham do jeito deles, podem voltar com perguntas e depois entregam o resultado. Você não sabe (nem precisa saber) quais ferramentas eles usaram.</p>
+<div class="example">
+  <h4>Exemplo: quando usar MCP e quando usar A2A no mesmo sistema</h4>
+  <p>Um agente de <strong>planejamento de viagens corporativas</strong>:</p>
+  <ul>
+    <li>Consulta a política de viagens da empresa → <strong>MCP</strong> (resource/tool de leitura, resposta determinística).</li>
+    <li>Pede a um <strong>agente de reservas do fornecedor</strong> que encontre o melhor voo dentro do orçamento → <strong>A2A</strong>: o fornecedor tem lógica própria, pode demorar, pode responder "não há voo nesse horário, aceita o das 14h?" (estado <code>input-required</code>).</li>
+    <li>Pede ao <strong>agente de finanças</strong> (outro time, feito em outro framework) a aprovação do gasto → <strong>A2A</strong>.</li>
+  </ul>
+</div>
+
 <!-- ============================================================ -->
 <h2 id="a2a-conceitos">Tasks, Messages, Parts, Agent Cards e Artifacts</h2>
+<div class="ficha">
+  <div class="obj"><h5>🎯 Objetivo</h5><p>Dominar o vocabulário do A2A: Agent Card, Task, Message, Part e Artifact.</p></div>
+  <div class="serve"><h5>🧩 Para que serve</h5><p>Ler e escrever mensagens A2A corretamente e saber onde fica cada informação (pedido, conversa, resultado).</p></div>
+  <div class="usar"><h5>✅ Quando usar</h5><p>Sempre que for consumir ou expor um agente via A2A — esses objetos aparecem em toda requisição.</p></div>
+  <div class="evitar"><h5>⛔ Quando evitar / cuidados</h5><p>Não confunda <strong>Message</strong> (conversa, inclusive perguntas intermediárias) com <strong>Artifact</strong> (o entregável final). Coloque o resultado em artifacts para que o cliente saiba o que é "produto".</p></div>
+</div>
 <ul>
   <li><strong>Agent Card</strong>: "cartão de visitas" JSON do agente remoto — nome, descrição, URL, capacidades (streaming, push), habilidades (<em>skills</em>), formatos aceitos e esquema de autenticação.</li>
   <li><strong>Task</strong>: unidade de trabalho com ID e estado; pode durar segundos ou dias.</li>
@@ -204,8 +301,29 @@ claude mcp add pedidos -- docker run -i --rm minhaorg/mcp-pedidos:1.0</code></pr
   <li><strong>Artifact</strong>: resultado/produto gerado pela task (relatório, imagem, JSON), também composto de Parts.</li>
 </ul>
 
+<div class="example">
+  <h4>Exemplo: os cinco conceitos numa única interação</h4>
+<pre class="plain"><code>1. Orquestrador lê o AGENT CARD do "agente-de-relatorios"
+   → descobre a skill "relatorio_vendas" que aceita application/json
+2. Envia uma MESSAGE (role: user) com duas PARTS:
+     - TextPart: "Gere o relatório trimestral com destaque por região"
+     - DataPart: {"trimestre": "2026-Q3", "moeda": "BRL"}
+3. O agente remoto cria a TASK  t-91  (state: working)
+4. Responde com MESSAGE (role: agent): "Incluo devoluções?"  (state: input-required)
+5. Orquestrador responde na mesma task: "Sim"               (state: working)
+6. Task t-91 → completed, com dois ARTIFACTS:
+     - "relatorio.pdf"   (FilePart)
+     - "resumo"          (DataPart: {"total": 1250000, "maior_regiao": "Sudeste"})</code></pre>
+</div>
+
 <!-- ============================================================ -->
 <h2 id="a2a-fluxo">Arquitetura e fluxo de comunicação A2A</h2>
+<div class="ficha">
+  <div class="obj"><h5>🎯 Objetivo</h5><p>Entender a sequência completa: descoberta → envio → acompanhamento (polling, streaming ou push) → resultado.</p></div>
+  <div class="serve"><h5>🧩 Para que serve</h5><p>Escolher o modo de interação certo para cada tipo de tarefa e implementar o cliente sem travar à espera de respostas.</p></div>
+  <div class="usar"><h5>✅ Quando usar</h5><ul><li><code>message/send</code>: tarefas rápidas.</li><li><code>message/stream</code> (SSE): o usuário acompanha o progresso.</li><li>Push notifications (webhook): tarefas de minutos/horas.</li></ul></div>
+  <div class="evitar"><h5>⛔ Quando evitar / cuidados</h5><p>Não segure uma conexão HTTP aberta por horas esperando uma task longa; use push notifications e consulte a task por ID (<code>tasks/get</code>).</p></div>
+</div>
 <div class="diagram">Cliente A2A (agente orquestrador)                 Servidor A2A (agente remoto)
   1. GET /.well-known/agent.json  ──────────────►   devolve Agent Card
   2. escolhe skill adequada
@@ -230,8 +348,22 @@ claude mcp add pedidos -- docker run -i --rm minhaorg/mcp-pedidos:1.0</code></pr
 }</code></pre>
 </div>
 
+<h3>Três formas de acompanhar uma task</h3>
+<div class="table-wrap"><table>
+  <tr><th>Modo</th><th>Como funciona</th><th>Exemplo de uso</th></tr>
+  <tr><td>Request/response (<code>message/send</code>)</td><td>Cliente espera a resposta; pode consultar depois com <code>tasks/get</code></td><td>Traduzir um texto, classificar um ticket</td></tr>
+  <tr><td>Streaming (<code>message/stream</code>, SSE)</td><td>Servidor envia eventos de status e artifacts parciais em tempo real</td><td>Gerar um relatório mostrando progresso ao usuário</td></tr>
+  <tr><td>Push notifications</td><td>Cliente registra um webhook; servidor avisa quando a task muda</td><td>Análise de contrato que leva 2 horas; reconciliação noturna</td></tr>
+</table></div>
+
 <!-- ============================================================ -->
 <h2 id="a2a-task">Estrutura de uma Task e estados possíveis</h2>
+<div class="ficha">
+  <div class="obj"><h5>🎯 Objetivo</h5><p>Conhecer o ciclo de vida da Task e seus estados, inclusive os terminais.</p></div>
+  <div class="serve"><h5>🧩 Para que serve</h5><p>Implementar corretamente o cliente: saber quando esperar, quando responder ao agente (<code>input-required</code>), quando autenticar e quando desistir.</p></div>
+  <div class="usar"><h5>✅ Quando usar</h5><p>Ao construir orquestradores, dashboards de acompanhamento e lógica de retry/timeout.</p></div>
+  <div class="evitar"><h5>⛔ Quando evitar / cuidados</h5><p>Não trate <code>input-required</code> como erro: é o agente remoto pedindo uma informação. E não reenvie uma task terminal (<code>completed</code>, <code>failed</code>…) — crie uma nova.</p></div>
+</div>
 <div class="example">
   <h4>Exemplo: Task concluída (simplificada)</h4>
 <pre><code>{
@@ -260,8 +392,35 @@ claude mcp add pedidos -- docker run -i --rm minhaorg/mcp-pedidos:1.0</code></pr
 </table>
 </div>
 
+<div class="example">
+  <h4>Exemplo: cliente que trata os estados corretamente (pseudocódigo Python)</h4>
+<pre><code>task = client.send_message(msg)
+while task.status.state not in {"completed", "failed", "canceled", "rejected"}:
+    if task.status.state == "input-required":
+        # o agente remoto fez uma pergunta: mostre ao usuário (ou responda via LLM)
+        resposta = perguntar_ao_usuario(task.status.message)
+        task = client.send_message(nova_msg(resposta, task_id=task.id, context_id=task.context_id))
+    elif task.status.state == "auth-required":
+        task = client.send_message(credenciais_para(task), task_id=task.id)
+    else:  # submitted / working
+        time.sleep(2)
+        task = client.get_task(task.id)
+
+if task.status.state == "completed":
+    for art in task.artifacts:
+        salvar(art)
+else:
+    registrar_falha(task)   # failed / canceled / rejected</code></pre>
+</div>
+
 <!-- ============================================================ -->
 <h2 id="a2a-parts">Tipos de mensagens e partes (text, file, json)</h2>
+<div class="ficha">
+  <div class="obj"><h5>🎯 Objetivo</h5><p>Saber montar mensagens com os três tipos de Part: texto, arquivo e dados estruturados (JSON).</p></div>
+  <div class="serve"><h5>🧩 Para que serve</h5><p>Enviar ao agente remoto exatamente o formato que ele entende melhor (ex.: JSON validável em vez de texto livre) e receber resultados processáveis por código.</p></div>
+  <div class="usar"><h5>✅ Quando usar</h5><p>Use <strong>DataPart</strong> sempre que o outro lado for processar campos (datas, valores, IDs); <strong>FilePart</strong> para PDFs, imagens, planilhas; <strong>TextPart</strong> para instruções em linguagem natural.</p></div>
+  <div class="evitar"><h5>⛔ Quando evitar / cuidados</h5><p>Evite embutir JSON dentro de texto ("segue o JSON: {...}"): o agente remoto terá de "adivinhar" o parse. E verifique no Agent Card quais formatos ele aceita.</p></div>
+</div>
 <pre><code>{ "kind": "text", "text": "Resumo da análise..." }
 
 { "kind": "file", "file": { "name": "contrato.pdf", "mimeType": "application/pdf",
@@ -270,8 +429,25 @@ claude mcp add pedidos -- docker run -i --rm minhaorg/mcp-pedidos:1.0</code></pr
 { "kind": "data", "data": { "cpf_valido": true, "score": 712 } }        // JSON estruturado</code></pre>
 <p>A negociação de formatos acontece pelo Agent Card (<code>defaultInputModes</code>/<code>defaultOutputModes</code>, por exemplo <code>text/plain</code>, <code>application/json</code>), permitindo que agentes se adaptem ao que o outro suporta — inclusive UI e mídia.</p>
 
+<div class="example">
+  <h4>Exemplo prático: escolhendo o tipo de Part</h4>
+  <p>Você quer que o agente de RH analise um currículo para uma vaga:</p>
+  <ul>
+    <li><strong>TextPart:</strong> "Avalie a aderência deste candidato à vaga e destaque lacunas."</li>
+    <li><strong>FilePart:</strong> o PDF do currículo (<code>mimeType: application/pdf</code>).</li>
+    <li><strong>DataPart:</strong> <code>{"vaga_id": "BE-204", "senioridade": "pleno", "requisitos": ["Go", "Postgres", "Kubernetes"]}</code></li>
+  </ul>
+  <p>O artifact de retorno também vem como DataPart (<code>{"aderencia": 0.78, "lacunas": ["Kubernetes"]}</code>), que seu sistema grava direto no ATS sem precisar interpretar texto.</p>
+</div>
+
 <!-- ============================================================ -->
 <h2 id="a2a-descoberta">Descoberta de agentes (agent.json)</h2>
+<div class="ficha">
+  <div class="obj"><h5>🎯 Objetivo</h5><p>Publicar e consumir Agent Cards para que agentes se encontrem automaticamente.</p></div>
+  <div class="serve"><h5>🧩 Para que serve</h5><p>Permitir que um orquestrador descubra o que cada agente sabe fazer (skills), como autenticar e quais formatos usar, sem configuração manual.</p></div>
+  <div class="usar"><h5>✅ Quando usar</h5><p>Ao expor qualquer agente A2A, e em empresas com muitos agentes (crie um registro/catálogo interno que indexa os cards).</p></div>
+  <div class="evitar"><h5>⛔ Quando evitar / cuidados</h5><p>O Agent Card é público por natureza: não coloque nele segredos, URLs internas sensíveis ou detalhes de implementação. Use o <em>extended card</em> autenticado para informações restritas.</p></div>
+</div>
 <p>Por convenção, o Agent Card é publicado num caminho bem conhecido do domínio do agente: <code>/.well-known/agent.json</code> (nas versões mais recentes da especificação, <code>/.well-known/agent-card.json</code>). Também é possível descobrir agentes via registros/catálogos corporativos.</p>
 <div class="example">
   <h4>Exemplo: Agent Card</h4>
@@ -296,8 +472,17 @@ claude mcp add pedidos -- docker run -i --rm minhaorg/mcp-pedidos:1.0</code></pr
 }</code></pre>
 </div>
 
+<p><strong>Por que um caminho "bem conhecido"?</strong> É a mesma ideia de <code>robots.txt</code> ou <code>/.well-known/openid-configuration</code>: qualquer cliente sabe onde procurar sem combinar nada antes. Basta saber o domínio do agente.</p>
+<div class="tip"><strong>Na prática em empresas:</strong> além do well-known, mantenha um <em>registro de agentes</em> (um serviço simples que lista os Agent Cards aprovados). O orquestrador consulta o registro, filtra por skill e por permissão do usuário, e só então chama o agente.</div>
+
 <!-- ============================================================ -->
 <h2 id="a2a-composicao">Composição de agentes de frameworks diferentes</h2>
+<div class="ficha">
+  <div class="obj"><h5>🎯 Objetivo</h5><p>Montar sistemas multiagente combinando agentes de frameworks diferentes (ADK, LangGraph, CrewAI, Claude Agent SDK) via A2A, cada um usando MCP para suas ferramentas.</p></div>
+  <div class="serve"><h5>🧩 Para que serve</h5><p>Reaproveitar agentes que já existem em outros times/fornecedores, sem reescrevê-los nem acoplar-se à tecnologia deles.</p></div>
+  <div class="usar"><h5>✅ Quando usar</h5><p>Organizações grandes, integrações B2B entre agentes, e quando cada domínio (RH, finanças, suporte) tem dono próprio.</p></div>
+  <div class="evitar"><h5>⛔ Quando evitar / cuidados</h5><p>Num único time e codebase, subagentes do próprio framework são mais simples e baratos. Cada salto A2A soma latência, custo e um ponto de falha.</p></div>
+</div>
 <p>O valor do A2A aparece em ambientes heterogêneos: o agente de RH foi feito com LangGraph por um time, o de finanças com ADK por outro, um fornecedor oferece um agente de viagens próprio. Um orquestrador descobre seus Agent Cards e delega tarefas sem conhecer a implementação de nenhum.</p>
 <ul>
   <li>O <strong>ADK</strong> tem suporte nativo para expor agentes via A2A e consumir agentes remotos como subagentes.</li>
@@ -305,6 +490,22 @@ claude mcp add pedidos -- docker run -i --rm minhaorg/mcp-pedidos:1.0</code></pr
   <li>Combine: <strong>A2A entre agentes</strong> + <strong>MCP de cada agente para suas ferramentas</strong>.</li>
 </ul>
 <div class="note"><strong>Pontos de atenção</strong>: autenticação entre agentes (OAuth, mTLS), autorização por skill, limites de custo/tempo por task, rastreamento distribuído (propagar trace IDs entre agentes), e tratar a saída de um agente remoto como <em>não confiável</em> (prompt injection entre agentes).</div>
+
+<div class="example">
+  <h4>Exemplo de arquitetura: atendimento de uma seguradora</h4>
+<div class="diagram">                 ┌──────────────────────────────┐
+  Cliente ─────► │ Orquestrador (Claude Agent SDK) │
+                 └───────┬───────────┬──────────┘
+                    A2A  │           │  A2A
+         ┌───────────────▼──┐   ┌────▼──────────────────┐
+         │ Agente de Sinistros│   │ Agente de Pagamentos   │
+         │ (LangGraph, time A)│   │ (Google ADK, time B)   │
+         └───────┬───────────┘   └────┬──────────────────┘
+            MCP  │                MCP │
+       sistema de apólices,      gateway de pagamento,
+       vistoria com fotos        ERP financeiro</div>
+  <p>O orquestrador não sabe que um agente usa LangGraph e o outro ADK: só conhece os Agent Cards. Cada time evolui seu agente (troca de modelo, novas tools) sem quebrar os demais, desde que mantenha as skills publicadas.</p>
+</div>
 
 <!-- ============================================================ -->
 <h2 id="recursos">Recursos para aprofundar</h2>
@@ -323,10 +524,10 @@ claude mcp add pedidos -- docker run -i --rm minhaorg/mcp-pedidos:1.0</code></pr
     <li><a href="https://docs.docker.com/ai/mcp-catalog-and-toolkit/">Docker MCP Catalog &amp; Toolkit</a></li>
   </ul></div>
   <div class="box videos"><h4>▶️ Vídeos</h4><ul>
-    <li><a href="https://www.youtube.com/results?search_query=model+context+protocol+explained">Buscar: MCP explained</a></li>
-    <li><a href="https://www.youtube.com/results?search_query=build+mcp+server+python+fastmcp">Buscar: construir servidor MCP em Python</a></li>
-    <li><a href="https://www.youtube.com/results?search_query=A2A+agent2agent+protocol+google+explained">Buscar: A2A explicado</a></li>
-    <li><a href="https://www.youtube.com/results?search_query=MCP+vs+A2A">Buscar: MCP vs A2A</a></li>
+    <li><a href="https://www.youtube.com/watch?v=kQmXtrmQ5Zg">Building Agents with Model Context Protocol — Full Workshop</a> — Mahesh Murag (Anthropic, co-criador do MCP): tools, resources, prompts e servidores.</li>
+    <li><a href="https://www.youtube.com/watch?v=qVrvtqfgPwc">Build an MCP Server in 7 Minutes (FastMCP)</a> — o servidor MCP mais simples possível em Python.</li>
+    <li><a href="https://www.youtube.com/watch?v=GUozMSpnmcc">Google A2A Protocol Explained: Tutorial, Demo &amp; How It Works with MCP</a> — Agent Card, tasks e a relação com o MCP.</li>
+    <li><a href="https://www.youtube.com/watch?v=Cd8P36t_4lM">MCP vs A2A — The Two Protocols Running AI Agents</a> — resumo de 3 minutos da diferença entre os dois.</li>
   </ul></div>
   <div class="box courses"><h4>🎓 Cursos</h4><ul>
     <li><a href="https://www.deeplearning.ai/short-courses/mcp-build-rich-context-ai-apps-with-anthropic/">MCP: Build Rich-Context AI Apps with Anthropic</a></li>

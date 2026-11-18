@@ -28,6 +28,12 @@
 
 <!-- ============================================================ -->
 <h2 id="integrando">IA dentro da aplicação: SDKs, LangChain e RAG</h2>
+<div class="ficha">
+  <div class="obj"><h5>🎯 Objetivo</h5><p>Colocar IA <em>dentro</em> da sua aplicação: chamada básica via SDK, tool use para acessar dados do sistema, extração estruturada e RAG com LangChain.</p></div>
+  <div class="serve"><h5>🧩 Para que serve</h5><p>Criar features com IA para o usuário final: assistentes que consultam pedidos, extração de dados de documentos, busca em base de conhecimento.</p></div>
+  <div class="usar"><h5>✅ Quando usar</h5><ul><li><strong>Chamada simples:</strong> resumir, classificar, reescrever.</li><li><strong>Tool use:</strong> a resposta depende de dados vivos do seu sistema.</li><li><strong>Extração estruturada:</strong> transformar PDFs/e-mails em JSON.</li><li><strong>RAG:</strong> responder com base em documentos.</li></ul></div>
+  <div class="evitar"><h5>⛔ Quando evitar / cuidados</h5><p>Não dê ao modelo tools que escrevem/apagam sem validação e permissão do usuário. Não use LangChain só por usar: para uma chamada simples, o SDK oficial é mais direto.</p></div>
+</div>
 <p>Antes do conteúdo programático, a base prática para os objetivos acima: como uma aplicação chama um modelo, dá ferramentas a ele, extrai dados estruturados e usa RAG.</p>
 <h3>Chamada básica com SDK</h3>
 <div class="example">
@@ -108,6 +114,12 @@ print(resposta.content)</code></pre>
 
 <!-- ============================================================ -->
 <h2 id="fundamentos">Fundamentos do Desenvolvimento com IA</h2>
+<div class="ficha">
+  <div class="obj"><h5>🎯 Objetivo</h5><p>Recapitular as ferramentas e os pilares do desenvolvimento com IA (contexto, especificação, verificação, passos pequenos, reuso).</p></div>
+  <div class="serve"><h5>🧩 Para que serve</h5><p>Ter um checklist mental para qualquer projeto: se um pilar estiver faltando, a qualidade do que a IA produz cai.</p></div>
+  <div class="usar"><h5>✅ Quando usar</h5><p>No início de cada projeto e quando a IA começar a errar muito — normalmente falta contexto, spec ou verificação.</p></div>
+  <div class="evitar"><h5>⛔ Quando evitar / cuidados</h5><p>Não escolha ferramenta antes do workflow: sem contexto e verificação, qualquer ferramenta produz código inconsistente.</p></div>
+</div>
 <h3>Ferramentas, IDEs e workflows de desenvolvimento com IA</h3>
 <p>Recapitulando (Disciplinas 05 e 06): assistentes na IDE (Cursor, Copilot, Windsurf), agentes de terminal (Claude Code), agentes na nuvem que abrem PRs, servidores MCP e ferramentas de design (Figma). O workflow importa mais que a ferramenta.</p>
 <h3>Pilares do desenvolvimento moderno com IA</h3>
@@ -123,8 +135,26 @@ print(resposta.content)</code></pre>
 <h3>Documentação e artefatos que guiam a IA</h3>
 <p>PRD, specs, ADRs, OpenAPI, design tokens, guidelines de testes, <code>CLAUDE.md</code>/<code>AGENTS.md</code>. Cada artefato responde a uma pergunta que o agente faria.</p>
 
+<div class="example">
+  <h4>Exemplo: diagnóstico pelos pilares</h4>
+  <div class="table-wrap"><table>
+    <tr><th>Sintoma</th><th>Pilar faltando</th><th>Correção</th></tr>
+    <tr><td>A IA usa padrões diferentes em cada arquivo</td><td>Contexto</td><td>CLAUDE.md com convenções + arquivo de referência</td></tr>
+    <tr><td>Entrega algo diferente do que você queria</td><td>Especificação</td><td>Critérios de aceite antes de pedir o código</td></tr>
+    <tr><td>Diz que terminou, mas está quebrado</td><td>Verificação</td><td>Comando de teste/lint que ela deve rodar</td></tr>
+    <tr><td>PR gigante impossível de revisar</td><td>Passos pequenos</td><td>Plano em fases, um commit por fase</td></tr>
+    <tr><td>Você repete as mesmas instruções todo dia</td><td>Reuso</td><td>Skill ou comando</td></tr>
+  </table></div>
+</div>
+
 <!-- ============================================================ -->
 <h2 id="ambiente">Preparando o Ambiente para a IA</h2>
+<div class="ficha">
+  <div class="obj"><h5>🎯 Objetivo</h5><p>Preparar o repositório para o agente: arquivos de contexto, o que entra e o que fica fora do contexto, testabilidade e políticas.</p></div>
+  <div class="serve"><h5>🧩 Para que serve</h5><p>Fazer o agente acertar mais com menos tokens e evitar que ele leia segredos ou faça ações que exigem humano.</p></div>
+  <div class="usar"><h5>✅ Quando usar</h5><p>Antes de usar agentes num repositório pela primeira vez e sempre que o agente repetir um mesmo erro.</p></div>
+  <div class="evitar"><h5>⛔ Quando evitar / cuidados</h5><p>Não cole documentação inteira nem segredos no contexto. Não dê permissão de push/deploy ao agente sem gates e revisão.</p></div>
+</div>
 <h3>Arquivos de inicialização e contexto do agente</h3>
 <p><code>CLAUDE.md</code> (Claude Code), <code>AGENTS.md</code> (padrão aberto), <code>.cursor/rules/</code>, <code>.github/copilot-instructions.md</code>. Um truque comum: manter o conteúdo em <code>AGENTS.md</code> e fazer o <code>CLAUDE.md</code> importá-lo (o Claude Code suporta importar arquivos com <code>@caminho</code>).</p>
 <h3>O que deve e o que não deve entrar no contexto</h3>
@@ -138,7 +168,7 @@ print(resposta.content)</code></pre>
   <tr><td>Decisões vigentes (ADRs)</td><td>Histórico de discussões, informações obsoletas</td></tr>
 </table>
 </div>
-<p>Use também <code>.claudeignore</code>/permissões de leitura negadas para arquivos sensíveis (<code>.env</code>) e pastas enormes geradas (<code>dist/</code>, <code>node_modules/</code>).</p>
+<p>Bloqueie também a leitura de arquivos sensíveis (<code>.env</code>, chaves) com regras de permissão — no Claude Code, <code>"permissions": {"deny": ["Read(./.env)", "Read(./secrets/**)"]}</code> no <code>.claude/settings.json</code> — e mantenha pastas geradas enormes (<code>dist/</code>, <code>node_modules/</code>) fora do Git, para o agente não perder tempo nelas.</p>
 <h3>Testabilidade, convenções e políticas do projeto</h3>
 <p>Um projeto "amigável à IA" é, antes de tudo, um projeto testável: rodar um teste específico em segundos, ambiente local reproduzível (Docker), dados de seed, mensagens de erro claras. Políticas: o que o agente pode fazer sozinho (rodar testes, editar src/) e o que exige humano (push, migração em produção, mudar dependências).</p>
 <h3>Evolução e otimização de projetos existentes</h3>
@@ -146,6 +176,12 @@ print(resposta.content)</code></pre>
 
 <!-- ============================================================ -->
 <h2 id="skills">Skills: Reutilizando Conhecimento com a IA</h2>
+<div class="ficha">
+  <div class="obj"><h5>🎯 Objetivo</h5><p>Criar e organizar Skills: pacotes de instruções, scripts e exemplos que o agente carrega sob demanda.</p></div>
+  <div class="serve"><h5>🧩 Para que serve</h5><p>Reaproveitar conhecimento entre sessões, projetos e pessoas, sem inchar o contexto fixo (CLAUDE.md).</p></div>
+  <div class="usar"><h5>✅ Quando usar</h5><p>Para procedimentos recorrentes e específicos (criar migração, montar componente do design system, gerar relatório), especialmente se envolvem scripts ou templates.</p></div>
+  <div class="evitar"><h5>⛔ Quando evitar / cuidados</h5><p>Não transforme regras gerais curtas em skill (ficam melhor no CLAUDE.md). A <code>description</code> da skill decide quando ela é carregada: vaga demais, ela nunca é usada.</p></div>
+</div>
 <h3>Que problemas as Skills resolvem no dia a dia</h3>
 <ul>
   <li>Repetir as mesmas instruções em toda sessão ("nosso padrão de migração é…").</li>
@@ -183,8 +219,33 @@ Nível 3  arquivos referenciados    → lidos só se necessários
 <p>MCP dá <em>capacidades</em> (acesso ao banco, ao Figma); skills dão <em>know-how</em> (como usar essas capacidades do jeito do seu time). Ex.: uma skill <code>db-investigation</code> que ensina a consultar o banco via MCP Postgres com queries somente leitura e limites.</p>
 <p>Docs: <a href="https://code.claude.com/docs/en/skills">Skills no Claude Code</a> · <a href="https://platform.claude.com/docs/en/agents-and-tools/agent-skills/overview">Agent Skills (API)</a>.</p>
 
+<div class="example">
+  <h4>Exemplo: uma skill de migrações TypeORM</h4>
+<pre><code>.claude/skills/typeorm-migrations/
+├── SKILL.md
+├── template.ts          # esqueleto de migração no padrão do time
+└── validar.sh           # roda a migração up/down num banco descartável</code></pre>
+<pre><code>---
+name: typeorm-migrations
+description: Use ao criar ou alterar tabelas/colunas no banco (migrations TypeORM).
+---
+# Como criamos migrações
+1. Gere com `npm run migration:generate -- src/migrations/&lt;NomeEmPascalCase&gt;`.
+2. Revise o SQL gerado; ajuste a partir de template.ts se necessário.
+3. Toda migração precisa de `down()` que desfaz exatamente o `up()`.
+4. Colunas novas em tabelas grandes: crie como NULL, preencha em lote, depois NOT NULL.
+5. Rode ./validar.sh e só conclua se up e down passarem.</code></pre>
+  <p>Ela só entra no contexto quando a tarefa envolve banco — o CLAUDE.md continua enxuto. Veja <a href="https://code.claude.com/docs/en/skills">Claude Code Skills</a>.</p>
+</div>
+
 <!-- ============================================================ -->
 <h2 id="do-zero">Iniciando Projetos do Zero com IA</h2>
+<div class="ficha">
+  <div class="obj"><h5>🎯 Objetivo</h5><p>Iniciar projetos novos com IA indo além do "hello world": stack decidida, estrutura, testes, CI e contexto desde o primeiro commit.</p></div>
+  <div class="serve"><h5>🧩 Para que serve</h5><p>Garantir que a base do projeto tenha padrões claros — tudo que a IA gerar depois vai copiar essa base.</p></div>
+  <div class="usar"><h5>✅ Quando usar</h5><p>Em protótipos que vão virar produto, POCs para validar stack e novos serviços no ecossistema da empresa.</p></div>
+  <div class="evitar"><h5>⛔ Quando evitar / cuidados</h5><p>Não peça "crie um app de e-commerce completo" de uma vez: o resultado é grande, inconsistente e difícil de revisar. Faça o bootstrap em etapas.</p></div>
+</div>
 <h3>Abordagem para projetos novos (greenfield)</h3>
 <ol>
   <li>PRD de alto nível + escolha de stack registrada em ADRs.</li>
@@ -209,6 +270,12 @@ Antes de gerar, mostre a árvore de diretórios proposta e aguarde aprovação.<
 
 <!-- ============================================================ -->
 <h2 id="testes">Testes Automatizados na Era da IA</h2>
+<div class="ficha">
+  <div class="obj"><h5>🎯 Objetivo</h5><p>Definir uma estratégia de testes para a era da IA: categorias, cobertura com valor real, caminho feliz/triste/bordas e TDD com agentes.</p></div>
+  <div class="serve"><h5>🧩 Para que serve</h5><p>Dar ao agente a verificação de que ele precisa para trabalhar sozinho e proteger o projeto de regressões geradas em alta velocidade.</p></div>
+  <div class="usar"><h5>✅ Quando usar</h5><p>Sempre. TDD com agente é especialmente útil em regras de negócio: você (ou a IA) escreve o teste, revisa, e o agente implementa até passar.</p></div>
+  <div class="evitar"><h5>⛔ Quando evitar / cuidados</h5><p>Não persiga 100% de cobertura com testes triviais gerados por IA. Proíba o agente de alterar testes para fazê-los passar sem sua aprovação.</p></div>
+</div>
 <h3>Definição e categorização de testes</h3>
 <div class="table-wrap">
 <table>
@@ -252,6 +319,12 @@ real (dê um exemplo de mutação que ele pegaria) ou se é fraco. Sugira melhor
 
 <!-- ============================================================ -->
 <h2 id="backend">Construindo o Backend de uma Aplicação Real</h2>
+<div class="ficha">
+  <div class="obj"><h5>🎯 Objetivo</h5><p>Construir o backend de uma aplicação real (Nest.js, Docker, banco) com IA, incluindo contexto, regras e curadoria de skills.</p></div>
+  <div class="serve"><h5>🧩 Para que serve</h5><p>Aplicar todo o workflow em um projeto concreto e ver onde a IA acelera e onde precisa de supervisão.</p></div>
+  <div class="usar"><h5>✅ Quando usar</h5><p>Como projeto-guia de estudo e como modelo para estruturar backends novos no trabalho.</p></div>
+  <div class="evitar"><h5>⛔ Quando evitar / cuidados</h5><p>Não deixe o agente escolher sozinho ORM, padrão de módulos e estratégia de autenticação: decida (ADR) e registre no contexto.</p></div>
+</div>
 <h3>Arquitetura do projeto e workflows com IA</h3>
 <div class="diagram">apps/
 ├── api/          Nest.js (módulos por domínio: orders, customers, payments)
@@ -310,6 +383,12 @@ claude mcp add postgres -- npx -y @modelcontextprotocol/server-postgres postgres
 
 <!-- ============================================================ -->
 <h2 id="workflow">Workflow: Pesquisar, Planejar e Implementar</h2>
+<div class="ficha">
+  <div class="obj"><h5>🎯 Objetivo</h5><p>Aplicar o ciclo pesquisar → planejar → implementar com artefatos (<code>research.md</code>, <code>plan.md</code>) e gestão ativa da janela de contexto.</p></div>
+  <div class="serve"><h5>🧩 Para que serve</h5><p>Separar o pensar do fazer: erros de entendimento são pegos no plano, onde corrigir é barato.</p></div>
+  <div class="usar"><h5>✅ Quando usar</h5><p>Em qualquer feature que não seja trivial e em sessões longas, em que o contexto cheio começa a degradar a qualidade.</p></div>
+  <div class="evitar"><h5>⛔ Quando evitar / cuidados</h5><p>Não aprove o plano sem ler. E não continue numa sessão saturada: inicie outra apontando para o plano.</p></div>
+</div>
 <h3>Ciclo de pesquisa, planejamento e implementação com IA</h3>
 <ol>
   <li><strong>Pesquisar</strong>: o agente lê código, docs (Context7) e schema (MCP) e escreve <code>research.md</code> com o que encontrou.</li>
@@ -330,6 +409,12 @@ claude mcp add postgres -- npx -y @modelcontextprotocol/server-postgres postgres
 
 <!-- ============================================================ -->
 <h2 id="design-system">Design System com IA e Figma</h2>
+<div class="ficha">
+  <div class="obj"><h5>🎯 Objetivo</h5><p>Integrar design e código com IA: Figma via MCP, design tokens sincronizados e auditoria de consistência visual.</p></div>
+  <div class="serve"><h5>🧩 Para que serve</h5><p>Gerar telas fiéis ao design, usando os componentes e tokens existentes em vez de CSS inventado.</p></div>
+  <div class="usar"><h5>✅ Quando usar</h5><p>Quando há um design system (ou Figma organizado) e o time quer acelerar a implementação de telas.</p></div>
+  <div class="evitar"><h5>⛔ Quando evitar / cuidados</h5><p>Figma bagunçado (sem componentes, sem auto layout) gera código bagunçado. A IA não substitui a revisão visual de uma pessoa.</p></div>
+</div>
 <h3>Front-end na era da IA e ferramentas de design</h3>
 <p>Gerar telas virou trivial; manter <strong>consistência visual</strong> não. O design system (tokens + componentes + regras) é o "contexto" que impede a IA de criar uma interface diferente a cada tela.</p>
 <h3>Integração com o Figma via MCP</h3>
@@ -366,6 +451,12 @@ npx shadcn@latest add button dialog form table</code></pre>
 
 <!-- ============================================================ -->
 <h2 id="frontend">Construindo o Frontend da Aplicação</h2>
+<div class="ficha">
+  <div class="obj"><h5>🎯 Objetivo</h5><p>Construir o frontend (Next.js) com subagentes, contrato de API via OpenAPI e testes E2E e com mocks.</p></div>
+  <div class="serve"><h5>🧩 Para que serve</h5><p>Integrar front e back sem retrabalho (o contrato OpenAPI é a fonte da verdade) e verificar a UI automaticamente.</p></div>
+  <div class="usar"><h5>✅ Quando usar</h5><p>Em apps com backend próprio e telas com fluxos importantes (login, checkout) que precisam de E2E.</p></div>
+  <div class="evitar"><h5>⛔ Quando evitar / cuidados</h5><p>Não deixe o front "adivinhar" o formato da API: gere tipos/cliente a partir do OpenAPI. E2E demais deixa o CI lento — cubra só fluxos críticos.</p></div>
+</div>
 <h3>Workflow expandido com subagentes</h3>
 <p>Subagentes especializados: <em>ui-implementer</em> (implementa telas a partir do Figma via MCP), <em>api-integrator</em> (conecta ao cliente gerado), <em>e2e-tester</em> (escreve e roda Playwright), <em>a11y-reviewer</em> (acessibilidade).</p>
 <h3>Documentação de API com OpenAPI</h3>
@@ -411,7 +502,7 @@ export const handlers = [
     <li><a href="https://platform.claude.com/docs/en/agents-and-tools/agent-skills/overview">Agent Skills</a> · <a href="https://platform.claude.com/docs/en/build-with-claude/skills-guide">Skills guide (API)</a></li>
     <li><a href="https://code.claude.com/docs/en/skills">Claude Code skills</a> · <a href="https://code.claude.com/docs/en/mcp">MCP no Claude Code</a></li>
   </ul></div>
-  <div class="box docs"><h4>📘 Stack do curso</h4><ul>
+  <div class="box docs"><h4>📘 Stack usada nos exemplos</h4><ul>
     <li><a href="https://docs.nestjs.com">Nest.js</a> · <a href="https://typeorm.io">TypeORM</a></li>
     <li><a href="https://nextjs.org/docs">Next.js</a> · <a href="https://ui.shadcn.com">shadcn/ui</a></li>
     <li><a href="https://playwright.dev">Playwright</a></li>
@@ -420,11 +511,10 @@ export const handlers = [
     <li><a href="https://docs.langchain.com">LangChain</a></li>
   </ul></div>
   <div class="box videos"><h4>▶️ Vídeos</h4><ul>
-    <li><a href="https://www.youtube.com/results?search_query=figma+mcp+server+claude+code+design+to+code">Buscar: Figma MCP + Claude Code</a></li>
-    <li><a href="https://www.youtube.com/results?search_query=TDD+with+AI+coding+agent">Buscar: TDD com agentes de IA</a></li>
-    <li><a href="https://www.youtube.com/results?search_query=nestjs+typeorm+docker+tutorial+portugu%C3%AAs">Buscar: Nest.js + TypeORM + Docker (PT)</a></li>
-    <li><a href="https://www.youtube.com/results?search_query=RAG+langchain+tutorial+portugu%C3%AAs">Buscar: RAG com LangChain (PT)</a></li>
-    <li><a href="https://www.youtube.com/@LangChain">Canal LangChain</a></li>
+    <li><a href="https://www.youtube.com/watch?v=Jxh3G28ApYI">How to set up the Dev Mode MCP server</a> — Figma: configurando o servidor MCP para gerar código a partir do design.</li>
+    <li><a href="https://www.youtube.com/watch?v=gv0WHhKelSE">Claude Code best practices</a> — Anthropic: inclui o fluxo de TDD com o agente (escrever testes → implementar até passar).</li>
+    <li><a href="https://www.youtube.com/watch?v=fqr0mhQrASU">Aprenda a conteinerizar com Docker sua aplicação NestJS</a> — em português, base para o ambiente do backend.</li>
+    <li><a href="https://www.youtube.com/watch?v=sVcwVQRHIc8">Learn RAG From Scratch</a> — Lance Martin (LangChain), freeCodeCamp: RAG do básico ao avançado.</li>
   </ul></div>
   <div class="box courses"><h4>🎓 Cursos</h4><ul>
     <li><a href="https://anthropic.skilljar.com/">Anthropic Academy</a> — Building with the Claude API, Agent Skills</li>

@@ -28,6 +28,12 @@
 
 <!-- ============================================================ -->
 <h2 id="fundamentos">Fundamentos do Desenvolvimento Agêntico</h2>
+<div class="ficha">
+  <div class="obj"><h5>🎯 Objetivo</h5><p>Entender como um agente de código trabalha sozinho por várias etapas: quebra de tarefas, estado entre sessões, verificação e correção.</p></div>
+  <div class="serve"><h5>🧩 Para que serve</h5><p>Delegar tarefas inteiras (não só trechos) ao agente, com resultados que você consegue confiar e revisar.</p></div>
+  <div class="usar"><h5>✅ Quando usar</h5><p>Tarefas bem definidas que tocam vários arquivos e têm critério de pronto verificável (testes, build, comportamento observável).</p></div>
+  <div class="evitar"><h5>⛔ Quando evitar / cuidados</h5><p>Tarefas ambíguas, exploratórias ou de alto risco (migração de dados em produção) pedem você no comando, com o agente em modo de sugestão.</p></div>
+</div>
 <p>Um <strong>agente de código</strong> roda em loop: lê arquivos, decide uma ação (editar, rodar comando, buscar), observa o resultado, decide a próxima — até considerar a tarefa concluída. Ele é poderoso e também propenso a: perder o fio em tarefas longas, declarar vitória cedo, "consertar" testes em vez do código, e mexer no que não devia.</p>
 
 <h3>Task Breakdown</h3>
@@ -54,6 +60,12 @@ Dependências: T1→T3, T2→T3→T4→T5</code></pre>
 
 <!-- ============================================================ -->
 <h2 id="sdd">Spec-Driven Development (SDD)</h2>
+<div class="ficha">
+  <div class="obj"><h5>🎯 Objetivo</h5><p>Aplicar o Spec-Driven Development: PRD → especificação → plano de tasks → implementação guiada pela spec.</p></div>
+  <div class="serve"><h5>🧩 Para que serve</h5><p>Trocar o "vibe coding" por um processo em que a spec é a fonte da verdade, revisada por você <em>antes</em> do código existir.</p></div>
+  <div class="usar"><h5>✅ Quando usar</h5><p>Features médias e grandes, trabalho que vai ser paralelizado entre agentes e qualquer coisa que outra pessoa precise revisar depois.</p></div>
+  <div class="evitar"><h5>⛔ Quando evitar / cuidados</h5><p>Para correções pequenas, o overhead de PRD + spec não se paga. Spec que ninguém revisa só move o problema de lugar.</p></div>
+</div>
 <p>Em <strong>SDD</strong>, a especificação é o artefato principal: você escreve (com ajuda da IA) <em>o que</em> e <em>por que</em>, revisa, e o agente implementa a partir dela. Ferramentas como o <a href="https://github.com/github/spec-kit">GitHub Spec Kit</a> formalizam o fluxo <em>specify → plan → tasks → implement</em>.</p>
 
 <h3>Os 3 níveis do SDD</h3>
@@ -102,6 +114,12 @@ test("cancela pedido pago dentro de 24h", async ({ page }) =&gt; {
 
 <!-- ============================================================ -->
 <h2 id="paralelo">Desenvolvimento Paralelo com SDD</h2>
+<div class="ficha">
+  <div class="obj"><h5>🎯 Objetivo</h5><p>Rodar várias features/tarefas ao mesmo tempo com subagentes ou sessões paralelas, sem que se atrapalhem.</p></div>
+  <div class="serve"><h5>🧩 Para que serve</h5><p>Reduzir o tempo total de entrega e economizar contexto: um orquestrador coordena, workers executam com contexto próprio.</p></div>
+  <div class="usar"><h5>✅ Quando usar</h5><p>Quando o plano tem tarefas independentes (módulos diferentes, poucos arquivos em comum) e o projeto tem gates automáticos confiáveis.</p></div>
+  <div class="evitar"><h5>⛔ Quando evitar / cuidados</h5><p>Tarefas que mexem nos mesmos arquivos geram conflitos; paralelizar sem testes automatizados multiplica bugs e a carga de revisão.</p></div>
+</div>
 <h3>Integração entre features e regras de ouro</h3>
 <p>Desenvolver várias features em paralelo (com vários agentes) só funciona se elas não colidirem. Regras de ouro:</p>
 <ol>
@@ -161,6 +179,12 @@ git worktree remove ../app-feat-cancel   # depois do merge</code></pre>
 
 <!-- ============================================================ -->
 <h2 id="harness">Harness Engineering</h2>
+<div class="ficha">
+  <div class="obj"><h5>🎯 Objetivo</h5><p>Entender o harness — tudo em volta do modelo (loop, ferramentas, contexto, permissões, hooks, verificação) — e como construir o seu.</p></div>
+  <div class="serve"><h5>🧩 Para que serve</h5><p>Transformar um agente genérico num agente confiável <em>para o seu projeto</em>, com limites claros e verificação externa.</p></div>
+  <div class="usar"><h5>✅ Quando usar</h5><p>Quando você usa agentes todos os dias no mesmo repositório e percebe erros repetidos: declarar pronto sem testar, desviar da spec, ações perigosas.</p></div>
+  <div class="evitar"><h5>⛔ Quando evitar / cuidados</h5><p>Não tente resolver tudo só com prompt ("por favor, sempre rode os testes"): o que é crítico deve ser garantido mecanicamente (hooks, gates, permissões).</p></div>
+</div>
 <h3>O que é Agent Harness (general-purpose e user harness)</h3>
 <p>O <strong>harness</strong> é tudo ao redor do modelo que o transforma em agente: o loop, as ferramentas, o gerenciamento de contexto, permissões, hooks, subagentes, memória, verificação. "Modelo + harness = agente".</p>
 <ul>
@@ -194,8 +218,38 @@ git worktree remove ../app-feat-cancel   # depois do merge</code></pre>
 </ul>
 <div class="tip">O artigo <a href="https://www.anthropic.com/engineering/effective-harnesses-for-long-running-agents">Effective harnesses for long-running agents</a> (Anthropic) mostra um harness com <strong>agente inicializador</strong> (cria lista de features, <code>init.sh</code>, arquivo de progresso e commit inicial) + <strong>agente de código</strong> que, em cada sessão, faz uma feature, testa de ponta a ponta, commita e atualiza o progresso.</div>
 
+<div class="example">
+  <h4>Exemplo: um guardrail mecânico com hook do Claude Code</h4>
+  <p>Em vez de pedir "não rode comandos destrutivos", o hook <em>bloqueia</em> antes da execução:</p>
+<pre><code>// .claude/settings.json
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [{ "type": "command", "command": ".claude/hooks/bloquear-perigosos.sh" }]
+      }
+    ]
+  }
+}</code></pre>
+<pre><code>#!/usr/bin/env bash
+# .claude/hooks/bloquear-perigosos.sh — recebe o JSON da chamada pelo stdin
+cmd=$(jq -r '.tool_input.command')
+if echo "$cmd" | grep -Eq 'rm -rf|git reset --hard|git push --force|DROP TABLE'; then
+  echo "Comando bloqueado pelo harness: $cmd" &gt;&amp;2
+  exit 2   # código 2 = bloqueia e devolve a mensagem ao agente
+fi</code></pre>
+  <p>Veja <a href="https://code.claude.com/docs/en/hooks">Hooks reference</a>. O mesmo mecanismo serve para rodar o formatter após cada edição ou os testes antes de encerrar.</p>
+</div>
+
 <!-- ============================================================ -->
 <h2 id="principios">Princípios de Harness Engineering</h2>
+<div class="ficha">
+  <div class="obj"><h5>🎯 Objetivo</h5><p>Conhecer os princípios de harness engineering: subagentes, artefatos e estado, unidades pequenas e verificáveis, guardrails mecânicos e avaliação por rubrica.</p></div>
+  <div class="serve"><h5>🧩 Para que serve</h5><p>Ter um checklist para desenhar e revisar o harness de qualquer projeto.</p></div>
+  <div class="usar"><h5>✅ Quando usar</h5><p>Ao montar o harness do zero ou quando o agente começa a falhar em tarefas longas.</p></div>
+  <div class="evitar"><h5>⛔ Quando evitar / cuidados</h5><p>Excesso de regras e gates lentos frustram o fluxo: cada gate deve ser rápido e checar algo que realmente quebra.</p></div>
+</div>
 <h3>Orquestração de subagentes</h3>
 <p>Especialize: <em>explorer</em> (só leitura, mapeia código), <em>implementer</em>, <em>tester</em>, <em>reviewer</em>. O orquestrador decide quem chamar, em que ordem, e consolida.</p>
 
@@ -245,6 +299,12 @@ git worktree remove ../app-feat-cancel   # depois do merge</code></pre>
 
 <!-- ============================================================ -->
 <h2 id="skills-gates">Skills, Gates e Design System</h2>
+<div class="ficha">
+  <div class="obj"><h5>🎯 Objetivo</h5><p>Criar skills (SKILL.md com instruções, scripts e exemplos), scaffolding, AGENTS.md, gates de qualidade e guidelines de UI/design system.</p></div>
+  <div class="serve"><h5>🧩 Para que serve</h5><p>Empacotar conhecimento do projeto que o agente carrega só quando precisa, e impedir mecanicamente que código fora do padrão avance.</p></div>
+  <div class="usar"><h5>✅ Quando usar</h5><p>Skills: procedimentos recorrentes (criar migração, gerar componente). Gates: lint, tipos, testes, build e checagens específicas antes de commit/PR.</p></div>
+  <div class="evitar"><h5>⛔ Quando evitar / cuidados</h5><p>Skill com instruções genéricas não agrega. Gate que falha aleatoriamente (teste flaky) ensina o agente — e o time — a ignorá-lo.</p></div>
+</div>
 <h3>Criação de Skills para Harness Engineering (SKILL.md)</h3>
 <p>Uma <strong>skill</strong> é uma pasta com um <code>SKILL.md</code> (frontmatter com <code>name</code> e <code>description</code> + instruções) e, opcionalmente, scripts, templates e referências. Só o nome e a descrição ficam sempre no contexto; o conteúdo completo é carregado quando a tarefa pede — <em>progressive disclosure</em>.</p>
 <div class="example">
@@ -291,6 +351,12 @@ echo "Ambiente OK"
 
 <!-- ============================================================ -->
 <h2 id="ciclo-completo">Ciclo Completo de Implementação</h2>
+<div class="ficha">
+  <div class="obj"><h5>🎯 Objetivo</h5><p>Ver o fluxo de ponta a ponta: PRD writer → spec writer → contrato → implementação → avaliação → tracking.</p></div>
+  <div class="serve"><h5>🧩 Para que serve</h5><p>Ter um processo repetível em que cada etapa produz um artefato revisável e o resultado final é comparado com o que foi combinado.</p></div>
+  <div class="usar"><h5>✅ Quando usar</h5><p>Ao implementar features completas com agentes e quando várias pessoas/agentes precisam acompanhar o progresso.</p></div>
+  <div class="evitar"><h5>⛔ Quando evitar / cuidados</h5><p>Não pule a avaliação contra o contrato: é ali que se descobre o que o agente "esqueceu" ou fez a mais.</p></div>
+</div>
 <h3>PRD Writer, tracking e SpecWriter na prática</h3>
 <ol>
   <li><code>/prd-writer</code> entrevista você e gera <code>docs/prd/feature.md</code>.</li>
@@ -324,6 +390,12 @@ RF-01, RF-03</code></pre>
 
 <!-- ============================================================ -->
 <h2 id="tmux">Paralelização e tmux</h2>
+<div class="ficha">
+  <div class="obj"><h5>🎯 Objetivo</h5><p>Organizar a execução paralela em waves (ondas) e operar várias sessões de agente com tmux e git worktrees.</p></div>
+  <div class="serve"><h5>🧩 Para que serve</h5><p>Acompanhar vários agentes num só terminal, sem perder sessões ao desconectar, e consolidar resultados de forma ordenada.</p></div>
+  <div class="usar"><h5>✅ Quando usar</h5><p>Quando você já tem tarefas independentes e quer rodar 2–4 agentes ao mesmo tempo, cada um no seu worktree.</p></div>
+  <div class="evitar"><h5>⛔ Quando evitar / cuidados</h5><p>Não comece com 8 agentes: a revisão vira gargalo. E nunca rode dois agentes no mesmo diretório de trabalho — use worktrees.</p></div>
+</div>
 <h3>Skill para paralelização independente</h3>
 <p>Uma skill pode analisar o plano, montar o grafo de dependências e identificar quais tasks podem rodar em paralelo sem conflito (sem dependência entre si e com baixa sobreposição de arquivos).</p>
 <h3>Waves e consolidação de resultados</h3>
@@ -350,6 +422,20 @@ tmux attach -t agentes
 </div>
 <div class="note">Paralelizar multiplica também o custo e a carga de revisão. Comece com 2 agentes; aumente quando o harness (gates, contratos) estiver maduro.</div>
 
+<div class="example">
+  <h4>Exemplo: um worktree por agente</h4>
+<pre><code># cada feature num diretório e branch separados, mesmo repositório
+git worktree add ../app-filtro-data   -b feat/filtro-data
+git worktree add ../app-export-csv    -b feat/export-csv
+
+tmux new-session -d -s agentes -c ../app-filtro-data 'claude'
+tmux split-window -h -t agentes -c ../app-export-csv 'claude'
+tmux attach -t agentes          # Ctrl-b + setas para trocar de painel
+
+# depois do merge
+git worktree remove ../app-filtro-data</code></pre>
+</div>
+
 <!-- ============================================================ -->
 <h2 id="recursos">Recursos para aprofundar</h2>
 <div class="resources">
@@ -368,10 +454,10 @@ tmux attach -t agentes
     <li><a href="https://github.com/github/spec-kit">GitHub Spec Kit</a></li>
   </ul></div>
   <div class="box videos"><h4>▶️ Vídeos</h4><ul>
-    <li><a href="https://www.youtube.com/results?search_query=spec+driven+development+AI+agents">Buscar: Spec-driven development</a></li>
-    <li><a href="https://www.youtube.com/results?search_query=claude+code+subagents+parallel+git+worktrees">Buscar: Claude Code subagents + worktrees</a></li>
-    <li><a href="https://www.youtube.com/results?search_query=claude+code+skills+tutorial">Buscar: Claude Code skills</a></li>
-    <li><a href="https://www.youtube.com/results?search_query=tmux+tutorial+iniciantes">Buscar: tmux para iniciantes</a></li>
+    <li><a href="https://www.youtube.com/watch?v=61K-2VRaC6s">Up &amp; Running with GitHub Spec Kit #1 — Intro &amp; Setup</a> — primeiro episódio de uma série sobre SDD com o Spec Kit e Claude Code.</li>
+    <li><a href="https://www.youtube.com/watch?v=oVll5a5vVc8">Claude Code Subagents</a> — como subagentes mantêm o contexto principal limpo (tópicos Paralelo e Harness).</li>
+    <li><a href="https://www.youtube.com/watch?v=DB_t1v4xOfQ">Claude Skills clearly explained in under 10 minutes</a> — o que é uma Skill e quando ela é carregada.</li>
+    <li><a href="https://www.youtube.com/watch?v=icEE9HHtawc">Learn tmux in 20 min</a> — o essencial de sessões, janelas e painéis para rodar vários agentes.</li>
   </ul></div>
   <div class="box courses"><h4>🎓 Cursos</h4><ul>
     <li><a href="https://www.deeplearning.ai/short-courses/claude-code-a-highly-agentic-coding-assistant/">Claude Code: A Highly Agentic Coding Assistant</a></li>

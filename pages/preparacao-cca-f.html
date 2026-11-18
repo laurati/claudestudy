@@ -1,0 +1,709 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Preparação para a CCA-F — ClaudeStudy</title>
+<link rel="stylesheet" href="../css/style.css">
+<script src="../js/site.js" defer></script>
+</head>
+<body data-root="..">
+<main>
+<article class="content">
+
+<span class="kicker">Certificação</span>
+<h1>Preparação para a CCA-F (Claude Certified Architect – Foundations)</h1>
+<p class="lead">Um roteiro para passar na certificação de arquiteto da Anthropic: o formato da prova, os cursos gratuitos da Anthropic Academy na ordem certa, o mapa de cada domínio para as páginas deste site e, principalmente, o conteúdo que a prova cobra e que as disciplinas não cobrem.</p>
+
+<div class="objectives">
+  <h4>Ao terminar esta página você será capaz de:</h4>
+  <ul>
+    <li>Saber exatamente o que a prova cobra e com que peso</li>
+    <li>Seguir os cursos da Anthropic Academy numa ordem que cobre os 5 domínios</li>
+    <li>Implementar o loop de tool use da API, forçar ferramentas com <code>tool_choice</code> e tratar erros de ferramenta</li>
+    <li>Configurar o Claude Code (CLAUDE.md, settings, permissões, hooks, skills, subagentes, CI) sabendo a precedência de cada camada</li>
+    <li>Projetar agentes com limites, escalonamento para humano e regras impostas por código</li>
+    <li>Tornar sistemas com Claude confiáveis: saída validada, retries, rate limits, contexto e custo</li>
+  </ul>
+</div>
+
+<div class="warning"><strong>Sobre as fontes:</strong> a Anthropic não publica o guia detalhado da prova. As informações de formato e domínios vêm de guias de estudo de terceiros (<a href="https://aicertguides.com/blog/claude-certified-architect-foundations-exam-guide">AI Cert Guides</a>, <a href="https://amitgambhir.github.io/claude-certified-architect-guide">guia de Amit Gambhir</a>, <a href="https://ogkranthi.github.io/claude-certified-architect-domains.html">guia de domínios</a>), que concordam entre si nos pontos principais. Preço e regras de inscrição mudam: confirme na <a href="https://anthropic.skilljar.com/">Anthropic Academy</a> antes de agendar. O conteúdo técnico desta página segue a documentação oficial do Claude, linkada em cada seção.</div>
+
+<!-- ============================================================ -->
+<h2 id="a-prova">A prova</h2>
+<div class="ficha">
+  <div class="obj"><h5>🎯 Objetivo</h5><p>Entender o formato antes de estudar, para estudar do jeito que a prova pergunta.</p></div>
+  <div class="serve"><h5>🧩 Para que serve</h5><p>A prova não pede definições decoradas: coloca você como arquiteto de um sistema e pergunta qual decisão tomar. Estudar com cenários é o que dá resultado.</p></div>
+  <div class="usar"><h5>✅ Para quem</h5><p>Quem constrói com Claude API, Agent SDK, Claude Code e MCP. Os guias recomendam cerca de 6 meses de prática.</p></div>
+  <div class="evitar"><h5>⛔ Cuidado</h5><p>Muito do que é popular sobre IA (LangChain, ADK, teoria de Transformers) não cai. A prova é centrada nas ferramentas da Anthropic.</p></div>
+</div>
+<div class="table-wrap">
+<table>
+  <tr><th>Item</th><th>Detalhe</th></tr>
+  <tr><td>Questões</td><td>60, múltipla escolha (1 correta + 3 distratores plausíveis)</td></tr>
+  <tr><td>Tempo</td><td>120 minutos, sem consulta e sem IA</td></tr>
+  <tr><td>Aprovação</td><td>720 numa escala de 100 a 1.000</td></tr>
+  <tr><td>Formato</td><td>4 cenários sorteados de um banco de 6; as questões giram em torno deles</td></tr>
+  <tr><td>Preço</td><td>US$ 99 ou US$ 125, conforme a fonte — confirme na inscrição</td></tr>
+  <tr><td>Validade</td><td>12 meses (segundo AI Cert Guides)</td></tr>
+  <tr><td>Inscrição</td><td>Pela Anthropic Academy (Skilljar), com prova online supervisionada</td></tr>
+</table>
+</div>
+
+<h3>Os 6 cenários</h3>
+<div class="table-wrap">
+<table>
+  <tr><th>Cenário</th><th>O que costuma ser perguntado</th><th>Domínios principais</th></tr>
+  <tr><td>Agente de atendimento ao cliente</td><td>Ferramentas de consulta/ação, quando escalar para humano, regras de negócio impostas por código</td><td>1, 2, 5</td></tr>
+  <tr><td>Geração de código com Claude Code</td><td>CLAUDE.md, permissões, hooks, plan mode, verificação</td><td>2, 3, 1</td></tr>
+  <tr><td>Sistema multiagente de pesquisa</td><td>Coordenador e subagentes, o que passar a cada subagente, consolidação, custo</td><td>1, 5, 4</td></tr>
+  <tr><td>Produtividade do desenvolvedor</td><td>Skills, comandos, subagentes, MCP no dia a dia</td><td>3, 1, 2</td></tr>
+  <tr><td>Claude Code no CI/CD</td><td>Modo não interativo, GitHub Actions, saída estruturada, permissões mínimas</td><td>3, 4</td></tr>
+  <tr><td>Extração estruturada de dados</td><td>Esquemas, <code>tool_choice</code>, validação e retry, Batch API</td><td>4, 2, 5</td></tr>
+</table>
+</div>
+
+<h3>Os 5 domínios</h3>
+<div class="table-wrap">
+<table>
+  <tr><th>Domínio</th><th>Peso</th><th>≈ questões</th></tr>
+  <tr><td><a href="#d1">1. Arquitetura agêntica e orquestração</a></td><td>27%</td><td>16</td></tr>
+  <tr><td><a href="#d3">3. Configuração e workflows do Claude Code</a></td><td>20%</td><td>12</td></tr>
+  <tr><td><a href="#d4">4. Prompt engineering e saída estruturada</a></td><td>20%</td><td>12</td></tr>
+  <tr><td><a href="#d2">2. Design de tools e integração MCP</a></td><td>18%</td><td>11</td></tr>
+  <tr><td><a href="#d5">5. Gestão de contexto e confiabilidade</a></td><td>15%</td><td>9</td></tr>
+</table>
+</div>
+<div class="tip"><strong>Onde está o peso:</strong> os domínios 1 e 3 somam quase metade da prova. E um conceito atravessa todos eles: <strong>o que é crítico deve ser garantido por código (hooks, permissões, validação), não por instrução no prompt</strong>. Quando estiver em dúvida entre duas alternativas, essa é muitas vezes a pista.</div>
+
+<!-- ============================================================ -->
+<h2 id="cursos">Cursos da Anthropic Academy: quais e em que ordem</h2>
+<div class="ficha">
+  <div class="obj"><h5>🎯 Objetivo</h5><p>Cobrir os 5 domínios com material oficial e gratuito, numa sequência em que cada curso se apoia no anterior.</p></div>
+  <div class="serve"><h5>🧩 Para que serve</h5><p>Os cursos usam a mesma terminologia e as mesmas APIs da prova, coisa que cursos de terceiros nem sempre fazem.</p></div>
+  <div class="usar"><h5>✅ Como fazer</h5><p>Rode cada exemplo dos cursos de verdade (API key + Claude Code instalado). A prova pergunta sobre comportamentos que só ficam claros quando você vê acontecer.</p></div>
+  <div class="evitar"><h5>⛔ Cuidado</h5><p>Os cursos ensinam o "como". A prova pergunta o "qual escolher e por quê". Depois de cada curso, revise a seção correspondente desta página.</p></div>
+</div>
+<div class="table-wrap">
+<table>
+  <tr><th>#</th><th>Curso</th><th>Domínios</th><th>Por que nessa posição</th></tr>
+  <tr><td>0</td><td><a href="https://anthropic.skilljar.com/claude-code-101">Claude Code 101</a> <small>(opcional)</small></td><td>3</td><td>Só se você nunca usou o Claude Code: instalação, CLAUDE.md, subagentes, skills, MCP e hooks em visão geral.</td></tr>
+  <tr><td>1</td><td><a href="https://anthropic.skilljar.com/claude-with-the-anthropic-api">Building with the Claude API</a></td><td>1, 2, 4, 5</td><td><strong>O mais importante.</strong> Messages API, tool use, saída estruturada, prompt caching, RAG, evals e padrões de agentes. É a base de quase metade da prova.</td></tr>
+  <tr><td>2</td><td><a href="https://anthropic.skilljar.com/introduction-to-model-context-protocol">Introduction to Model Context Protocol</a></td><td>2</td><td>Tools, resources e prompts; construir servidor e cliente com o SDK Python.</td></tr>
+  <tr><td>3</td><td><a href="https://anthropic.skilljar.com/model-context-protocol-advanced-topics">Model Context Protocol: Advanced Topics</a></td><td>2</td><td>Transportes (stdio, Streamable HTTP), sampling, notificações de progresso, roots.</td></tr>
+  <tr><td>4</td><td><a href="https://anthropic.skilljar.com/claude-code-in-action">Claude Code in Action</a></td><td>3, 1</td><td>Fluxos reais com o Claude Code: contexto, comandos, hooks, MCP, GitHub.</td></tr>
+  <tr><td>5</td><td><a href="https://anthropic.skilljar.com/introduction-to-agent-skills">Introduction to agent skills</a></td><td>3</td><td>Criar e configurar skills e saber quando usar skill × CLAUDE.md × hook × subagente — tipo de comparação que a prova faz.</td></tr>
+  <tr><td>6</td><td><a href="https://anthropic.skilljar.com/introduction-to-subagents">Introduction to subagents</a></td><td>1, 3</td><td>Quando delegar, como desenhar subagentes e o que passar para eles. Fecha o domínio 1.</td></tr>
+</table>
+</div>
+<p>Depois dos cursos, leia na documentação: <a href="https://platform.claude.com/docs/en/agent-sdk/overview">Agent SDK overview</a>, <a href="https://platform.claude.com/docs/en/agents-and-tools/tool-use/overview">Tool use</a>, <a href="https://platform.claude.com/docs/en/build-with-claude/structured-outputs">Structured outputs</a>, <a href="https://code.claude.com/docs/en/settings">Claude Code settings</a>, <a href="https://code.claude.com/docs/en/hooks">Hooks</a> e <a href="https://code.claude.com/docs/en/iam">Permissões (IAM)</a>. O catálogo da Academy muda com frequência: veja a lista atual em <a href="https://anthropic.skilljar.com/">anthropic.skilljar.com</a>.</p>
+
+<h3>Plano de 6 semanas (6–8 h por semana)</h3>
+<div class="table-wrap">
+<table>
+  <tr><th>Semana</th><th>Cursos</th><th>Neste site</th><th>Prática</th></tr>
+  <tr><td>1</td><td>Building with the Claude API (1ª metade)</td><td><a href="#d4">Domínio 4</a>, <a href="d02-prompt-engineering.html">Disciplina 02</a></td><td>Extrator de notas fiscais com <code>tool_choice</code> forçado e validação</td></tr>
+  <tr><td>2</td><td>Building with the Claude API (2ª metade)</td><td><a href="#d1">Domínio 1</a>, <a href="#d5">Domínio 5</a></td><td>Agente de suporte com loop de tool use, limite de passos e escalonamento</td></tr>
+  <tr><td>3</td><td>Intro to MCP + MCP Advanced Topics</td><td><a href="#d2">Domínio 2</a>, <a href="d09-protocolos.html">Disciplina 09</a></td><td>Servidor MCP com 3 tools, erros com <code>isError</code> e um resource</td></tr>
+  <tr><td>4</td><td>Claude Code in Action</td><td><a href="#d3">Domínio 3</a>, <a href="d05-dev-software-ia.html">Disciplinas 05</a> e <a href="d06-modo-agente.html">06</a></td><td>Configurar um repositório: CLAUDE.md, settings com deny, 2 hooks</td></tr>
+  <tr><td>5</td><td>Agent skills + Subagents</td><td><a href="#d3">Domínio 3</a>, <a href="#d1">Domínio 1</a></td><td>1 skill, 1 subagente revisor, GitHub Action de review</td></tr>
+  <tr><td>6</td><td>Revisão</td><td><a href="#simulado">Simulado</a> e <a href="#checklist">checklist</a></td><td>Refaça as questões erradas; releia os pontos do checklist que não souber explicar</td></tr>
+</table>
+</div>
+
+<!-- ============================================================ -->
+<h2 id="mapa">Mapa: o que este site já cobre e o que falta</h2>
+<p>As disciplinas foram escritas para ensinar engenharia de software com IA em geral. A prova é mais estreita e mais detalhada. Use este mapa para saber o que revisar e o que estudar do zero.</p>
+<div class="table-wrap">
+<table>
+  <tr><th>Domínio</th><th>Já coberto no site</th><th>Coberto só nesta página</th></tr>
+  <tr><td>1. Arquitetura agêntica</td><td><a href="d03-arquitetura-era-ia.html#patterns">Padrões</a>, <a href="d08-agentes.html#fundamentos">workflow × agente</a>, <a href="d08-agentes.html#subagentes">subagentes</a>, <a href="d06-modo-agente.html#harness">harness e hooks</a></td><td>Loop do Agent SDK, <code>stop_reason</code>, limites, escalonamento, código × prompt</td></tr>
+  <tr><td>2. Tools e MCP</td><td><a href="d08-agentes.html#tools">Boas tools</a>, <a href="d09-protocolos.html#mcp-fundamentos">primitivas e transportes do MCP</a>, <a href="d09-protocolos.html#mcp-desenvolvimento">servidor MCP</a></td><td>Tipos de erro de tool, <code>is_error</code>, handshake, escopos de configuração</td></tr>
+  <tr><td>3. Claude Code</td><td><a href="d05-dev-software-ia.html#documentacao-contexto">CLAUDE.md</a>, <a href="d05-dev-software-ia.html#biblioteca-prompts">comandos</a>, <a href="d06-modo-agente.html#skills-gates">skills e gates</a>, <a href="d07-aplicacoes-ia.html#workflow">plan mode</a></td><td>Precedência de memória e settings, regras por caminho, modos de permissão, <code>context: fork</code>, CI</td></tr>
+  <tr><td>4. Prompts e saída estruturada</td><td><a href="d02-prompt-engineering.html">Disciplina 02 inteira</a>, <a href="d07-aplicacoes-ia.html#integrando">extração estruturada</a></td><td><code>tool_choice</code>, ciclo validar → retry, Batch API</td></tr>
+  <tr><td>5. Contexto e confiabilidade</td><td><a href="d02-prompt-engineering.html#contexto">janela e caching</a>, <a href="d03-arquitetura-era-ia.html#context-engineering">context engineering</a>, <a href="d03-arquitetura-era-ia.html#system-design">system design</a></td><td>429/529 e backoff, orçamento de tokens, degradação graciosa</td></tr>
+</table>
+</div>
+<div class="note"><strong>Pode pular para a prova:</strong> Disciplinas <a href="d04-design-docs.html">04</a>, <a href="d10-devops-sre.html">10</a> e <a href="d11-carreira.html">11</a>; a parte de Google ADK, LangGraph, CrewAI e A2A (<a href="d08-agentes.html">08</a>, <a href="d09-protocolos.html">09</a>); o comparativo de Cursor/Copilot/Windsurf; e a teoria de Transformers e embeddings (<a href="d01-fundamentos-ia-generativa.html">01</a>). Continuam úteis para o trabalho, mas não caem.</div>
+
+<!-- ============================================================ -->
+<h2 id="d1">Domínio 1 — Arquitetura agêntica e orquestração (27%)</h2>
+<div class="ficha">
+  <div class="obj"><h5>🎯 Objetivo</h5><p>Desenhar agentes e sistemas multiagente que terminam, respeitam limites, sabem quando chamar um humano e não dependem só do prompt para obedecer regras.</p></div>
+  <div class="serve"><h5>🧩 Para que serve</h5><p>É a diferença entre uma demo e um agente em produção: sem limites ele gasta sem parar; sem escalonamento ele inventa; sem enforcement por código ele "esquece" a regra no pior momento.</p></div>
+  <div class="usar"><h5>✅ Quando aplicar</h5><p>Em todo agente que age no mundo real (reembolso, deploy, e-mail) e em qualquer orquestração com subagentes.</p></div>
+  <div class="evitar"><h5>⛔ Erro comum na prova</h5><p>Escolher "adicionar uma instrução mais enfática no system prompt" quando a alternativa correta é um hook, uma permissão ou uma validação em código.</p></div>
+</div>
+
+<h3>O loop de tool use da Messages API</h3>
+<p>O modelo não executa ferramentas: ele <em>pede</em>. Sua aplicação executa e devolve o resultado. O campo <code>stop_reason</code> da resposta diz o que fazer em seguida:</p>
+<div class="table-wrap">
+<table>
+  <tr><th><code>stop_reason</code></th><th>Significa</th><th>Sua aplicação deve</th></tr>
+  <tr><td><code>end_turn</code></td><td>O modelo terminou a resposta</td><td>Entregar ao usuário (o loop acaba)</td></tr>
+  <tr><td><code>tool_use</code></td><td>O modelo quer chamar uma ou mais tools</td><td>Executar <em>todas</em> as chamadas e devolver os <code>tool_result</code> na próxima mensagem</td></tr>
+  <tr><td><code>max_tokens</code></td><td>A resposta foi cortada pelo limite</td><td>Aumentar o limite ou continuar; não tratar como resposta completa</td></tr>
+  <tr><td><code>stop_sequence</code></td><td>Encontrou uma sequência de parada definida por você</td><td>Tratar conforme a lógica que definiu a sequência</td></tr>
+  <tr><td><code>pause_turn</code></td><td>Uma tool do servidor (ex.: web search) pausou um turno longo</td><td>Reenviar a conversa para o modelo continuar</td></tr>
+  <tr><td><code>refusal</code></td><td>O modelo recusou por segurança</td><td>Não insistir com o mesmo pedido; tratar ou escalar</td></tr>
+</table>
+</div>
+<div class="example">
+  <h4>Exemplo: loop de agente com limite de passos e escalonamento (Python)</h4>
+<pre><code>import anthropic
+client = anthropic.Anthropic()
+MAX_PASSOS = 8
+
+def rodar_agente(pergunta: str) -&gt; str:
+    mensagens = [{"role": "user", "content": pergunta}]
+    for passo in range(MAX_PASSOS):                      # loop sempre limitado
+        resp = client.messages.create(
+            model="claude-sonnet-5-5", max_tokens=2048,
+            system=SYSTEM_PROMPT, tools=TOOLS, messages=mensagens,
+        )
+        mensagens.append({"role": "assistant", "content": resp.content})
+
+        if resp.stop_reason == "end_turn":
+            return texto(resp)
+        if resp.stop_reason != "tool_use":
+            return escalar_para_humano(mensagens, motivo=resp.stop_reason)
+
+        resultados = []
+        for bloco in resp.content:                       # pode haver várias chamadas em paralelo
+            if bloco.type == "tool_use":
+                resultados.append(executar_tool(bloco))  # devolve um bloco tool_result
+        mensagens.append({"role": "user", "content": resultados})
+
+    return escalar_para_humano(mensagens, motivo="limite de passos atingido")</code></pre>
+  <p>Três pontos que a prova explora: (1) o loop tem teto; (2) <strong>todos</strong> os <code>tool_use</code> de uma resposta recebem um <code>tool_result</code> com o mesmo <code>tool_use_id</code>, na mesma mensagem; (3) qualquer saída inesperada termina em escalonamento, não em "tenta de novo para sempre".</p>
+</div>
+
+<h3>Claude Agent SDK: o mesmo loop, pronto</h3>
+<p>O <a href="https://platform.claude.com/docs/en/agent-sdk/overview">Claude Agent SDK</a> é o harness do Claude Code como biblioteca (Python e TypeScript): ele já faz o loop, a execução de ferramentas (arquivos, terminal, web, MCP), a compactação de contexto, os subagentes, os hooks e as permissões. Você configura em vez de programar o loop.</p>
+<div class="example">
+  <h4>Exemplo: agente com o Agent SDK (Python)</h4>
+<pre><code>import asyncio
+from claude_agent_sdk import query, ClaudeAgentOptions
+
+opcoes = ClaudeAgentOptions(
+    system_prompt="Você investiga falhas de testes e propõe correções mínimas.",
+    allowed_tools=["Read", "Grep", "Glob", "Bash"],   # menor privilégio
+    permission_mode="default",                        # pede aprovação para o que não foi liberado
+    max_turns=15,                                     # teto de iterações do loop
+)
+
+async def main():
+    async for mensagem in query(prompt="Por que test_checkout falha?", options=opcoes):
+        print(mensagem)
+
+asyncio.run(main())</code></pre>
+  <p>Versões recentes também aceitam um teto de custo por execução. Confira os nomes exatos das opções na referência do SDK da sua versão.</p>
+</div>
+
+<h3>Padrões de orquestração</h3>
+<div class="table-wrap">
+<table>
+  <tr><th>Padrão</th><th>Use quando</th><th>Exemplo de cenário da prova</th></tr>
+  <tr><td>Prompt chaining</td><td>Passos fixos e sequenciais</td><td>Extrair → validar → resumir um contrato</td></tr>
+  <tr><td>Routing</td><td>Entradas de tipos diferentes pedem tratamentos diferentes</td><td>Classificar o ticket e mandar para o fluxo de cobrança ou de bug</td></tr>
+  <tr><td>Paralelização</td><td>Subtarefas independentes</td><td>Analisar 5 fontes ao mesmo tempo</td></tr>
+  <tr><td>Orchestrator-workers (coordenador e subagentes)</td><td>As subtarefas só são conhecidas durante a execução</td><td>Sistema multiagente de pesquisa</td></tr>
+  <tr><td>Evaluator-optimizer</td><td>Existe critério claro para criticar e melhorar</td><td>Revisor que avalia a resposta com rubrica e pede correção</td></tr>
+</table>
+</div>
+<p><strong>Passando contexto para subagentes:</strong> o subagente começa com contexto próprio e <em>não</em> vê a conversa do coordenador. O coordenador precisa passar explicitamente o objetivo, as restrições, o formato de retorno esperado e o que <em>não</em> fazer. O subagente devolve um resumo condensado, não tudo o que leu — é isso que economiza contexto.</p>
+
+<h3>Escalonamento para humano</h3>
+<p>Defina gatilhos <strong>objetivos</strong>, avaliados em código sempre que possível:</p>
+<ul>
+  <li><strong>Valor ou risco:</strong> reembolso acima de R$ 500, exclusão de dados, mudança em produção.</li>
+  <li><strong>Limites atingidos:</strong> passos, tempo ou custo.</li>
+  <li><strong>Incerteza:</strong> falta informação, políticas conflitantes, o cliente pediu um humano.</li>
+  <li><strong>Falhas repetidas:</strong> a mesma tool falhou várias vezes.</li>
+</ul>
+<p>Ao escalar, entregue um <strong>resumo do caso</strong> (o que foi pedido, o que foi feito, o que falta e por que parou), para o humano não recomeçar do zero.</p>
+
+<h3>Enforcement: código × prompt</h3>
+<div class="table-wrap">
+<table>
+  <tr><th>Mecanismo</th><th>Garantia</th><th>Use para</th></tr>
+  <tr><td>Instrução no system prompt</td><td>Probabilística</td><td>Tom, estilo, preferências, heurísticas</td></tr>
+  <tr><td>Descrição da tool / esquema</td><td>Orienta o uso; esquema valida formato</td><td>Quando e como chamar cada tool</td></tr>
+  <tr><td>Permissões (allow/deny), tools disponíveis</td><td>Determinística</td><td>O que o agente <em>pode</em> fazer</td></tr>
+  <tr><td>Hooks (PreToolUse etc.)</td><td>Determinística</td><td>Bloquear comandos, exigir aprovação, validar argumentos</td></tr>
+  <tr><td>Validação no código da tool</td><td>Determinística</td><td>Regras de negócio (limite de valor, dono do pedido)</td></tr>
+</table>
+</div>
+<div class="tip"><strong>Regra para a prova:</strong> se violar a regra causa dano real (dinheiro, dados, segurança, compliance), a resposta certa é um mecanismo determinístico. O prompt pode <em>explicar</em> a regra, mas não pode ser a única barreira.</div>
+
+<!-- ============================================================ -->
+<h2 id="d2">Domínio 2 — Design de tools e integração MCP (18%)</h2>
+<div class="ficha">
+  <div class="obj"><h5>🎯 Objetivo</h5><p>Escrever tools que o modelo escolhe e usa corretamente, tratar erros de forma que o agente consiga se recuperar e configurar MCP com segurança.</p></div>
+  <div class="serve"><h5>🧩 Para que serve</h5><p>A maioria dos "erros do agente" é, na verdade, tool mal descrita, sobreposta ou com erro opaco.</p></div>
+  <div class="usar"><h5>✅ Quando aplicar</h5><p>Ao definir tools na API, ao escrever servidores MCP e ao conectar servidores de terceiros.</p></div>
+  <div class="evitar"><h5>⛔ Erro comum na prova</h5><p>Achar que o modelo "errou a tool" por falta de inteligência. A resposta costuma ser melhorar a <strong>descrição</strong> (quando usar, quando não usar, diferença para a tool vizinha).</p></div>
+</div>
+
+<h3>Anatomia de uma boa tool</h3>
+<div class="example">
+  <h4>Exemplo: definição de tool com descrição completa</h4>
+<pre><code>{
+  "name": "buscar_pedido",
+  "description": "Busca um pedido pelo número e devolve status, itens, valor e datas. Use quando o cliente citar um número de pedido ou perguntar sobre entrega/status. NÃO use para listar todos os pedidos do cliente (use listar_pedidos_cliente). Retorna erro NAO_ENCONTRADO se o número não existir.",
+  "input_schema": {
+    "type": "object",
+    "properties": {
+      "numero_pedido": {"type": "string", "description": "Número do pedido, só dígitos, ex.: "884123""}
+    },
+    "required": ["numero_pedido"]
+  }
+}</code></pre>
+  <ul>
+    <li><strong>Descrição</strong> diz o que faz, quando usar, quando <em>não</em> usar e o que retorna.</li>
+    <li><strong>Poucas tools, sem sobreposição.</strong> Duas tools que fazem quase a mesma coisa confundem a escolha.</li>
+    <li><strong>Tools pela tarefa, não pelo endpoint:</strong> uma <code>resumo_do_cliente</code> é melhor que cinco GETs encadeados.</li>
+    <li><strong>Retorno enxuto:</strong> só os campos úteis — resultado de tool ocupa contexto.</li>
+  </ul>
+</div>
+
+<h3>Erros de tool</h3>
+<p>Quando uma tool falha, devolva o erro <strong>ao modelo</strong> como resultado, marcado como erro, com informação suficiente para ele decidir o próximo passo:</p>
+<pre><code>{"type": "tool_result", "tool_use_id": "toolu_01A...", "is_error": true,
+ "content": "NAO_ENCONTRADO: pedido 88412 não existe. Confirme o número com o cliente."}</code></pre>
+<div class="table-wrap">
+<table>
+  <tr><th>Tipo de erro</th><th>Exemplo</th><th>O que fazer</th></tr>
+  <tr><td>Transitório</td><td>Timeout, 503, rate limit do sistema interno</td><td>Retry automático <em>no código</em> com backoff, antes de envolver o modelo</td></tr>
+  <tr><td>Permanente / de entrada</td><td>Pedido inexistente, parâmetro inválido</td><td>Devolver com <code>is_error</code> e mensagem acionável; o modelo corrige ou pergunta ao usuário</td></tr>
+  <tr><td>Estado incerto</td><td>Timeout num pagamento: cobrou ou não?</td><td>Não repetir às cegas. Verificar o estado (consulta idempotente) ou escalar</td></tr>
+  <tr><td>Permissão</td><td>Usuário não pode ver aquele pedido</td><td>Erro claro e sem vazar dado; o modelo informa o limite</td></tr>
+</table>
+</div>
+<div class="warning">Mensagens genéricas ("erro interno") fazem o modelo repetir a mesma chamada ou inventar uma resposta. Diga o que aconteceu e o que fazer.</div>
+
+<h3>MCP: o que a prova cobra além do básico</h3>
+<ul>
+  <li><strong>Handshake:</strong> o cliente envia <code>initialize</code> com versão do protocolo e capacidades; o servidor responde com as suas (ex.: suporta tools, resources, prompts, notificações de mudança na lista). Só depois o cliente chama <code>tools/list</code> e <code>tools/call</code>. Capacidade não declarada = recurso não usado.</li>
+  <li><strong>Erros no MCP:</strong> falha de execução de tool volta como resultado com <code>isError: true</code> (o modelo vê); erro de protocolo (método inexistente, JSON inválido) volta como erro JSON-RPC (o cliente trata).</li>
+  <li><strong>Transportes:</strong> stdio para servidores locais iniciados pelo cliente; Streamable HTTP para servidores remotos compartilhados, com autenticação (OAuth).</li>
+  <li><strong>Escopos no Claude Code:</strong> <em>local</em> (só você, neste projeto), <em>project</em> (arquivo <code>.mcp.json</code> versionado para o time) e <em>user</em> (você, em todos os projetos). Segredos ficam em variáveis de ambiente referenciadas no <code>.mcp.json</code>, nunca no arquivo.</li>
+  <li><strong>Confiança:</strong> conteúdo trazido por MCP é entrada não confiável (prompt injection). Servidor com credencial de escrita é ação com efeito real — aplique as mesmas permissões e hooks.</li>
+</ul>
+
+<!-- ============================================================ -->
+<h2 id="d3">Domínio 3 — Configuração e workflows do Claude Code (20%)</h2>
+<div class="ficha">
+  <div class="obj"><h5>🎯 Objetivo</h5><p>Saber onde cada configuração mora, qual vence em caso de conflito e qual mecanismo escolher (CLAUDE.md, regra, skill, comando, subagente, hook, permissão) para cada necessidade.</p></div>
+  <div class="serve"><h5>🧩 Para que serve</h5><p>Configurar o Claude Code para um time inteiro e para o CI, com comportamento previsível e seguro.</p></div>
+  <div class="usar"><h5>✅ Quando aplicar</h5><p>Cenários de geração de código, produtividade do dev e CI/CD — três dos seis cenários da prova.</p></div>
+  <div class="evitar"><h5>⛔ Erro comum na prova</h5><p>Colocar no CLAUDE.md o que deveria ser permissão ou hook, ou colocar em configuração pessoal o que o time inteiro precisa (deve ir para o arquivo versionado do projeto).</p></div>
+</div>
+
+<h3>Memória (CLAUDE.md): camadas</h3>
+<div class="table-wrap">
+<table>
+  <tr><th>Camada</th><th>Onde</th><th>Para quê</th></tr>
+  <tr><td>Política da organização</td><td>Arquivo gerenciado pelo administrador</td><td>Regras obrigatórias da empresa</td></tr>
+  <tr><td>Projeto</td><td><code>./CLAUDE.md</code> ou <code>./.claude/CLAUDE.md</code> (versionado)</td><td>Comandos, arquitetura e convenções do time</td></tr>
+  <tr><td>Regras por caminho</td><td><code>.claude/rules/*.md</code> com <code>paths:</code> no frontmatter</td><td>Regras que só valem para certos arquivos (ex.: <code>src/api/**</code>)</td></tr>
+  <tr><td>Usuário</td><td><code>~/.claude/CLAUDE.md</code></td><td>Suas preferências em todos os projetos</td></tr>
+  <tr><td>Subdiretório</td><td><code>src/payments/CLAUDE.md</code></td><td>Carregado quando o agente trabalha naquela pasta</td></tr>
+</table>
+</div>
+<p>Todas as camadas relevantes são carregadas juntas; as mais específicas vêm depois e tendem a prevalecer em conflito. Use <code>@caminho/arquivo.md</code> para importar outros arquivos. Ver <a href="https://code.claude.com/docs/en/memory">Memory</a>.</p>
+
+<h3>Settings e permissões</h3>
+<div class="table-wrap">
+<table>
+  <tr><th>Precedência (maior → menor)</th><th>Arquivo</th></tr>
+  <tr><td>1. Gerenciado (organização)</td><td>Política do administrador — não pode ser sobrescrito</td></tr>
+  <tr><td>2. Linha de comando</td><td>Flags da sessão</td></tr>
+  <tr><td>3. Projeto local</td><td><code>.claude/settings.local.json</code> (não versionado)</td></tr>
+  <tr><td>4. Projeto compartilhado</td><td><code>.claude/settings.json</code> (versionado)</td></tr>
+  <tr><td>5. Usuário</td><td><code>~/.claude/settings.json</code></td></tr>
+</table>
+</div>
+<div class="example">
+  <h4>Exemplo: settings do projeto com permissões</h4>
+<pre><code>// .claude/settings.json
+{
+  "permissions": {
+    "allow": ["Bash(npm run test:*)", "Bash(npm run lint)", "Edit(src/**)"],
+    "ask":   ["Bash(git push:*)"],
+    "deny":  ["Read(./.env)", "Read(./secrets/**)", "Bash(rm -rf:*)"]
+  }
+}</code></pre>
+  <p>Entre as regras, <strong><code>deny</code> vence</strong> <code>ask</code>, que vence <code>allow</code>. Um deny na política da organização não pode ser liberado por nenhum arquivo do projeto.</p>
+</div>
+<div class="table-wrap">
+<table>
+  <tr><th>Modo de permissão</th><th>Comportamento</th><th>Quando</th></tr>
+  <tr><td><code>default</code></td><td>Pede aprovação para ações não liberadas</td><td>Uso normal</td></tr>
+  <tr><td><code>acceptEdits</code></td><td>Aceita edições de arquivo sem perguntar</td><td>Você está acompanhando e confia no rumo</td></tr>
+  <tr><td><code>plan</code></td><td>Só lê e planeja, sem editar nem executar</td><td>Explorar e propor antes de mudar</td></tr>
+  <tr><td><code>bypassPermissions</code></td><td>Não pede nada</td><td>Só em ambiente isolado e descartável (container, CI sem segredos)</td></tr>
+</table>
+</div>
+<p>Versões novas do Claude Code podem ter modos adicionais; confira em <a href="https://code.claude.com/docs/en/iam">Identity and Access Management</a>.</p>
+
+<h3>Qual mecanismo usar?</h3>
+<div class="table-wrap">
+<table>
+  <tr><th>Necessidade</th><th>Mecanismo</th></tr>
+  <tr><td>Fato que o agente precisa saber em toda sessão</td><td>CLAUDE.md</td></tr>
+  <tr><td>Regra só para parte do código</td><td>Regra por caminho ou CLAUDE.md do subdiretório</td></tr>
+  <tr><td>Procedimento longo, com scripts/templates, usado às vezes</td><td>Skill (carregada só quando relevante)</td></tr>
+  <tr><td>Fluxo que o usuário dispara explicitamente</td><td>Comando <code>/nome</code></td></tr>
+  <tr><td>Tarefa que exige muita leitura e só o resumo importa</td><td>Subagente (<code>.claude/agents/</code>) ou skill com <code>context: fork</code></td></tr>
+  <tr><td>Algo que <strong>tem</strong> de acontecer ou nunca pode acontecer</td><td>Hook ou permissão</td></tr>
+</table>
+</div>
+
+<h3>Hooks</h3>
+<p>Comandos executados pelo harness em eventos do ciclo de vida: <code>PreToolUse</code> (antes de uma tool — pode bloquear), <code>PostToolUse</code> (depois — ex.: rodar o formatter), <code>UserPromptSubmit</code>, <code>Stop</code> e <code>SubagentStop</code> (ao terminar — ex.: exigir testes verdes), <code>SessionStart</code>, <code>PreCompact</code>, <code>Notification</code>. Um hook que sai com código 2 bloqueia a ação e devolve a mensagem ao agente. Exemplo completo na <a href="d06-modo-agente.html#harness">Disciplina 06</a>; referência em <a href="https://code.claude.com/docs/en/hooks">Hooks</a>.</p>
+
+<h3>Skills e subagentes</h3>
+<div class="example">
+  <h4>Exemplo: skill que roda isolada (context: fork) e subagente revisor</h4>
+<pre><code>---
+# .claude/skills/auditar-dependencias/SKILL.md
+name: auditar-dependencias
+description: Use quando pedirem para auditar dependências ou antes de um release.
+context: fork          # executa num contexto separado e devolve só o resultado
+allowed-tools: Bash(npm audit:*), Read
+---
+Rode npm audit --json, agrupe por severidade e devolva apenas
+os pacotes críticos/altos com a versão que corrige.</code></pre>
+<pre><code>---
+# .claude/agents/revisor-seguranca.md
+name: revisor-seguranca
+description: Revisa diffs com foco em segurança. Use após mudanças em auth, pagamentos ou SQL.
+tools: Read, Grep, Glob
+model: opus
+---
+Você revisa o diff indicado. Reporte só achados com cenário de exploração concreto,
+com arquivo, linha, severidade e correção sugerida. Não edite arquivos.</code></pre>
+  <p>Repare no menor privilégio: o revisor só lê. Veja <a href="https://code.claude.com/docs/en/skills">Skills</a> e <a href="https://code.claude.com/docs/en/sub-agents">Subagents</a>.</p>
+</div>
+
+<h3>Claude Code no CI/CD</h3>
+<div class="example">
+  <h4>Exemplo: modo não interativo e GitHub Action</h4>
+<pre><code># modo headless: uma tarefa, saída em JSON, ferramentas restritas, teto de turnos
+claude -p "Revise o diff de origin/main...HEAD e liste problemas críticos" \
+  --output-format json \
+  --allowedTools "Read,Grep,Glob,Bash(git diff:*)" \
+  --max-turns 10</code></pre>
+<pre><code># .github/workflows/claude-review.yml
+name: Claude review
+on: { pull_request: { types: [opened, synchronize] } }
+permissions: { contents: read, pull-requests: write }
+jobs:
+  review:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: anthropics/claude-code-action@v1
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          prompt: "Revise este PR seguindo o CLAUDE.md. Comente só problemas reais."</code></pre>
+  <p>Princípios cobrados: permissões mínimas no token do workflow, chave em secret, ferramentas restritas, saída estruturada quando outro passo vai consumi-la e nada de merge automático. Ver <a href="https://code.claude.com/docs/en/github-actions">GitHub Actions</a> e <a href="https://code.claude.com/docs/en/headless">headless</a>.</p>
+</div>
+
+<!-- ============================================================ -->
+<h2 id="d4">Domínio 4 — Prompt engineering e saída estruturada (20%)</h2>
+<div class="ficha">
+  <div class="obj"><h5>🎯 Objetivo</h5><p>Escrever system prompts como especificação e obter saídas em formato garantido, validadas e com recuperação de erro.</p></div>
+  <div class="serve"><h5>🧩 Para que serve</h5><p>Toda vez que outro programa consome a saída do Claude (extração, CI, integração), texto livre não serve: precisa de JSON válido e conferido.</p></div>
+  <div class="usar"><h5>✅ Quando aplicar</h5><p>Cenários de extração estruturada e CI/CD; qualquer pipeline que grava a saída em banco ou chama outra API.</p></div>
+  <div class="evitar"><h5>⛔ Erro comum na prova</h5><p>Pedir "responda em JSON" no prompt e fazer <code>json.loads</code> torcendo para dar certo. O correto é esquema + mecanismo da API + validação.</p></div>
+</div>
+<p>A base de prompt engineering está na <a href="d02-prompt-engineering.html">Disciplina 02</a>. Pontos que a prova enfatiza: system prompt com <strong>princípios explicados</strong> (o porquê) em vez de dezenas de condicionais; exemplos few-shot variados; instruções diluídas num prompt enorme perdem força; prompts versionados e avaliados.</p>
+
+<h3><code>tool_choice</code></h3>
+<div class="table-wrap">
+<table>
+  <tr><th>Valor</th><th>Efeito</th><th>Use quando</th></tr>
+  <tr><td><code>{"type": "auto"}</code> (padrão com tools)</td><td>O modelo decide se usa alguma tool</td><td>Agentes e assistentes em geral</td></tr>
+  <tr><td><code>{"type": "any"}</code></td><td>Precisa usar <em>alguma</em> tool</td><td>Toda resposta deve virar ação, mas o modelo escolhe qual</td></tr>
+  <tr><td><code>{"type": "tool", "name": "x"}</code></td><td>Precisa usar exatamente a tool <code>x</code></td><td>Extração estruturada: a "tool" é só o esquema da saída</td></tr>
+  <tr><td><code>{"type": "none"}</code></td><td>Não pode usar tools</td><td>Pedir um resumo final sem novas ações</td></tr>
+</table>
+</div>
+<p>Com <em>extended thinking</em> ativado, só <code>auto</code> e <code>none</code> são aceitos. A API também tem o recurso de <a href="https://platform.claude.com/docs/en/build-with-claude/structured-outputs">Structured outputs</a>, que restringe a resposta a um JSON Schema — veja a documentação para os parâmetros da sua versão.</p>
+
+<div class="example">
+  <h4>Exemplo: extração com tool forçada + validação + retry</h4>
+<pre><code>import anthropic
+from pydantic import BaseModel, ValidationError
+
+class NotaFiscal(BaseModel):
+    cnpj_emitente: str
+    data_emissao: str          # AAAA-MM-DD
+    valor_total: float
+    itens: list[str]
+
+FERRAMENTA = {
+    "name": "registrar_nota",
+    "description": "Registra os dados extraídos da nota fiscal.",
+    "input_schema": NotaFiscal.model_json_schema(),
+}
+client = anthropic.Anthropic()
+
+def extrair(texto_nota: str, tentativas: int = 2) -&gt; NotaFiscal | None:
+    mensagens = [{"role": "user", "content": f"&lt;nota&gt;{texto_nota}&lt;/nota&gt;"}]
+    for _ in range(tentativas + 1):
+        r = client.messages.create(
+            model="claude-haiku-5-5", max_tokens=1024,
+            tools=[FERRAMENTA],
+            tool_choice={"type": "tool", "name": "registrar_nota"},  # saída sempre no esquema
+            messages=mensagens,
+        )
+        chamada = next(b for b in r.content if b.type == "tool_use")
+        try:
+            return NotaFiscal(**chamada.input)          # validação das regras do seu domínio
+        except ValidationError as e:
+            mensagens += [
+                {"role": "assistant", "content": r.content},
+                {"role": "user", "content": [{
+                    "type": "tool_result", "tool_use_id": chamada.id, "is_error": True,
+                    "content": f"Dados inválidos: {e}. Corrija só esses campos.",
+                }]},
+            ]
+    return None   # esgotou: manda para revisão humana, não grava lixo</code></pre>
+  <p>O padrão completo: <strong>esquema</strong> (formato) → <strong>validação</strong> (regras do domínio, ex.: CNPJ válido, soma dos itens) → <strong>retry com o erro específico</strong> → <strong>limite de tentativas</strong> → <strong>fila de revisão</strong>.</p>
+</div>
+
+<h3>Batch API</h3>
+<p>A <a href="https://platform.claude.com/docs/en/build-with-claude/batch-processing">Message Batches API</a> processa grandes volumes de forma assíncrona com cerca de 50% de desconto, com resultados em até 24 horas. É a resposta certa para "extrair dados de 200 mil documentos antigos" ou "classificar o histórico de tickets" — e a errada para qualquer coisa que um usuário espera na tela ou que bloqueia um PR.</p>
+
+<!-- ============================================================ -->
+<h2 id="d5">Domínio 5 — Gestão de contexto e confiabilidade (15%)</h2>
+<div class="ficha">
+  <div class="obj"><h5>🎯 Objetivo</h5><p>Manter conversas e agentes longos dentro da janela, com custo controlado, e fazer o sistema continuar útil quando a API ou uma dependência falha.</p></div>
+  <div class="serve"><h5>🧩 Para que serve</h5><p>Em produção, o problema raramente é a resposta do modelo — é o 429 no pico, a conversa que estourou o contexto ou a fatura que dobrou.</p></div>
+  <div class="usar"><h5>✅ Quando aplicar</h5><p>Agentes de muitas etapas, chats longos, pipelines de alto volume, qualquer integração com SLA.</p></div>
+  <div class="evitar"><h5>⛔ Erro comum na prova</h5><p>Responder "usar um modelo com janela maior" para um problema de contexto mal gerenciado, ou "repetir até funcionar" para rate limit.</p></div>
+</div>
+
+<h3>Orçamento de contexto</h3>
+<p>A cada chamada, a janela é dividida entre: system prompt + definições de tools + histórico + resultados de tools + documentos + espaço para a resposta. O que mais cresce sem controle são <strong>histórico</strong> e <strong>resultados de tools</strong>. Estratégias (detalhes em <a href="d03-arquitetura-era-ia.html#context-engineering">Context engineering</a>):</p>
+<ul>
+  <li>Resultados de tool enxutos e paginados.</li>
+  <li>Compactação: resumir turnos antigos preservando decisões, pendências e identificadores.</li>
+  <li>Notas externas (arquivo de progresso) que o agente relê.</li>
+  <li>Subagentes para leituras extensas.</li>
+  <li>Informação crítica no início e reforçada perto do fim em prompts longos.</li>
+</ul>
+
+<h3>Prompt caching</h3>
+<p>Marque com <code>cache_control</code> o fim do trecho que se repete (tools, system prompt, documentos). Leituras do cache custam uma fração do preço normal e reduzem a latência. O cache só funciona com <strong>prefixo idêntico</strong>: deixe o que é fixo no começo e o que varia (pergunta do usuário, data/hora) no fim. Ver <a href="https://platform.claude.com/docs/en/build-with-claude/prompt-caching">Prompt caching</a>.</p>
+
+<h3>Rate limits e falhas da API</h3>
+<div class="table-wrap">
+<table>
+  <tr><th>Situação</th><th>Resposta correta</th></tr>
+  <tr><td><code>429</code> (rate limit)</td><td>Retry com backoff exponencial + jitter, respeitando o header <code>retry-after</code>; fila para suavizar picos</td></tr>
+  <tr><td><code>529</code> (API sobrecarregada) / <code>5xx</code></td><td>Retry com backoff; se persistir, degradar (modelo alternativo, resposta parcial, enfileirar)</td></tr>
+  <tr><td><code>400</code> (requisição inválida)</td><td>Não repetir — corrigir a requisição</td></tr>
+  <tr><td>Falhas repetidas de uma dependência</td><td>Circuit breaker: parar de chamar por um tempo e responder de forma degradada</td></tr>
+</table>
+</div>
+<p>Os SDKs oficiais já fazem retry automático com backoff para erros transitórios (configurável com <code>max_retries</code>). Ver <a href="https://platform.claude.com/docs/en/api/errors">Errors</a> e <a href="https://platform.claude.com/docs/en/api/rate-limits">Rate limits</a>.</p>
+
+<h3>Degradação graciosa e proveniência</h3>
+<ul>
+  <li>Se 3 de 5 fontes responderam, entregue o resultado parcial <strong>dizendo</strong> o que faltou, em vez de falhar tudo ou fingir completude.</li>
+  <li>Guarde a proveniência: de qual documento/tool veio cada afirmação, para auditoria e para o modelo citar.</li>
+  <li>Idempotência em ações: uma chave de idempotência evita cobrar duas vezes num retry.</li>
+</ul>
+
+<!-- ============================================================ -->
+<h2 id="checklist">Checklist de revisão</h2>
+<p>Na semana da prova, tente explicar cada item em voz alta. O que você não souber explicar, revise.</p>
+<details><summary>Domínio 1 — Arquitetura agêntica</summary><ul>
+  <li>O que fazer com cada <code>stop_reason</code>; por que todo <code>tool_use</code> precisa de <code>tool_result</code>.</li>
+  <li>Como limitar um loop (passos, tempo, custo) e o que acontece ao atingir o limite.</li>
+  <li>Workflow × agente; os cinco padrões de orquestração e um exemplo de cada.</li>
+  <li>O que passar a um subagente e o que ele deve devolver.</li>
+  <li>Gatilhos de escalonamento e o que entregar ao humano.</li>
+  <li>Quando a regra precisa ser imposta por código e não por prompt.</li>
+</ul></details>
+<details><summary>Domínio 2 — Tools e MCP</summary><ul>
+  <li>O que uma boa descrição de tool contém; por que evitar tools sobrepostas.</li>
+  <li>Erro transitório × permanente × estado incerto; uso de <code>is_error</code>.</li>
+  <li>Handshake e capacidades do MCP; erro de tool × erro de protocolo.</li>
+  <li>stdio × Streamable HTTP; escopos local, project e user; segredos fora do <code>.mcp.json</code>.</li>
+</ul></details>
+<details><summary>Domínio 3 — Claude Code</summary><ul>
+  <li>Camadas do CLAUDE.md e regras por caminho.</li>
+  <li>Precedência dos settings; deny &gt; ask &gt; allow; o que a política gerenciada garante.</li>
+  <li>Os modos de permissão e quando cada um é aceitável.</li>
+  <li>CLAUDE.md × regra × skill × comando × subagente × hook: qual para cada caso.</li>
+  <li>Eventos de hook e o significado do código de saída 2.</li>
+  <li><code>claude -p</code>, <code>--output-format json</code>, <code>--allowedTools</code>, <code>--max-turns</code> e a GitHub Action.</li>
+</ul></details>
+<details><summary>Domínio 4 — Prompts e saída estruturada</summary><ul>
+  <li>Os quatro valores de <code>tool_choice</code> e a restrição com extended thinking.</li>
+  <li>O ciclo esquema → validação → retry com erro → limite → revisão humana.</li>
+  <li>Quando usar Batch API e quando não.</li>
+  <li>Princípios × condicionais no system prompt; few-shot × chain of thought.</li>
+</ul></details>
+<details><summary>Domínio 5 — Contexto e confiabilidade</summary><ul>
+  <li>O que consome a janela e como controlar cada parte.</li>
+  <li>Como estruturar o prompt para o prompt caching funcionar.</li>
+  <li>Tratamento de 429, 529, 5xx e 400.</li>
+  <li>Circuit breaker, resposta parcial, proveniência e idempotência.</li>
+</ul></details>
+
+<!-- ============================================================ -->
+<h2 id="simulado">Simulado (estilo cenário)</h2>
+<p>Questões no formato da prova: um cenário, quatro alternativas plausíveis, uma correta. Clique para ver a explicação.</p>
+
+<div class="quiz" data-answer="c">
+  <div class="q">1. <em>Agente de atendimento.</em> A política diz que reembolsos acima de R$ 500 exigem aprovação de um supervisor. Em testes, o agente aprovou sozinho um reembolso de R$ 800 em 2% dos casos, mesmo com a regra no system prompt. O que fazer?</div>
+  <button class="opt" data-opt="a">Reescrever a regra em maiúsculas e repeti-la no fim do system prompt</button>
+  <button class="opt" data-opt="b">Adicionar três exemplos few-shot de reembolsos recusados</button>
+  <button class="opt" data-opt="c">Validar o valor dentro da tool de reembolso (ou num hook) e devolver um erro que leva ao fluxo de aprovação</button>
+  <button class="opt" data-opt="d">Trocar para um modelo maior</button>
+  <div class="explain">Regra com impacto financeiro precisa de garantia determinística. O prompt pode explicar a regra, mas a barreira tem de estar no código.</div>
+</div>
+
+<div class="quiz" data-answer="b">
+  <div class="q">2. <em>Extração estruturada.</em> Você extrai dados de contratos e às vezes o JSON vem sem o campo <code>data_vigencia</code>. Qual a abordagem mais robusta?</div>
+  <button class="opt" data-opt="a">Pedir "responda somente em JSON válido" e usar <code>json.loads</code></button>
+  <button class="opt" data-opt="b">Definir o esquema como tool, forçar com <code>tool_choice</code>, validar e, se falhar, reenviar o erro específico com um limite de tentativas</button>
+  <button class="opt" data-opt="c">Aumentar a temperatura para o modelo explorar mais</button>
+  <button class="opt" data-opt="d">Fazer três chamadas e escolher a mais longa</button>
+  <div class="explain">Esquema garante o formato; validação garante as regras; retry com o erro dá ao modelo o que corrigir; o limite evita loop infinito.</div>
+</div>
+
+<div class="quiz" data-answer="d">
+  <div class="q">3. <em>Claude Code para o time.</em> O time quer que o agente nunca leia o arquivo <code>.env</code>, em nenhuma máquina. Onde configurar?</div>
+  <button class="opt" data-opt="a">No <code>~/.claude/CLAUDE.md</code> de cada desenvolvedor</button>
+  <button class="opt" data-opt="b">No <code>CLAUDE.md</code> do projeto: "nunca leia o .env"</button>
+  <button class="opt" data-opt="c">Em <code>.claude/settings.local.json</code></button>
+  <button class="opt" data-opt="d">Uma regra <code>deny</code> para <code>Read(./.env)</code> em <code>.claude/settings.json</code> versionado (ou na política gerenciada, para garantir em toda a organização)</button>
+  <div class="explain">CLAUDE.md é instrução, não bloqueio. <code>settings.local.json</code> não é versionado. A regra deny no settings compartilhado vale para todos — e na política gerenciada não pode ser desfeita.</div>
+</div>
+
+<div class="quiz" data-answer="a">
+  <div class="q">4. <em>Pesquisa multiagente.</em> O coordenador delega a 4 subagentes a análise de fontes diferentes. Os relatórios voltam com 20 mil tokens cada e o coordenador estoura o contexto ao consolidar. Qual a melhor correção?</div>
+  <button class="opt" data-opt="a">Instruir cada subagente a devolver um resumo estruturado com conclusões, evidências citadas e lacunas, em tamanho limitado</button>
+  <button class="opt" data-opt="b">Passar a conversa inteira do coordenador para cada subagente</button>
+  <button class="opt" data-opt="c">Eliminar os subagentes e fazer tudo no coordenador</button>
+  <button class="opt" data-opt="d">Aumentar o <code>max_tokens</code> do coordenador</button>
+  <div class="explain">O valor do subagente é isolar a leitura extensa e devolver só o que importa. <code>max_tokens</code> limita a saída, não a janela de entrada.</div>
+</div>
+
+<div class="quiz" data-answer="c">
+  <div class="q">5. <em>Tools.</em> O agente chama <code>listar_pedidos_cliente</code> quando o cliente informa o número de um pedido específico, gerando respostas longas e lentas. Qual a primeira ação?</div>
+  <button class="opt" data-opt="a">Remover <code>listar_pedidos_cliente</code></button>
+  <button class="opt" data-opt="b">Forçar <code>buscar_pedido</code> com <code>tool_choice</code> em todas as chamadas</button>
+  <button class="opt" data-opt="c">Melhorar as descrições das duas tools, dizendo quando usar cada uma e quando não usar</button>
+  <button class="opt" data-opt="d">Aumentar a temperatura</button>
+  <div class="explain">A descrição é o que o modelo usa para escolher. Forçar uma tool em todas as chamadas quebraria os outros fluxos.</div>
+</div>
+
+<div class="quiz" data-answer="b">
+  <div class="q">6. <em>Tools.</em> A tool <code>cobrar_cartao</code> deu timeout. Não se sabe se a cobrança foi feita. O que o sistema deve fazer?</div>
+  <button class="opt" data-opt="a">Repetir a chamada imediatamente</button>
+  <button class="opt" data-opt="b">Consultar o status da cobrança (chamada idempotente, com chave de idempotência) antes de qualquer nova tentativa; se não for possível confirmar, escalar</button>
+  <button class="opt" data-opt="c">Informar ao cliente que a cobrança falhou</button>
+  <button class="opt" data-opt="d">Devolver <code>is_error</code> e deixar o modelo decidir repetir</button>
+  <div class="explain">Estado incerto em ação com efeito real: verificar antes de agir, nunca repetir às cegas.</div>
+</div>
+
+<div class="quiz" data-answer="d">
+  <div class="q">7. <em>CI/CD.</em> Você quer que o Claude Code revise cada PR no GitHub Actions e que um passo seguinte do pipeline leia os achados. Qual configuração?</div>
+  <button class="opt" data-opt="a">Modo interativo com <code>bypassPermissions</code></button>
+  <button class="opt" data-opt="b">Modo headless com todas as ferramentas liberadas para ele corrigir os problemas</button>
+  <button class="opt" data-opt="c">Pedir ao agente que escreva os achados em texto livre no log</button>
+  <button class="opt" data-opt="d">Modo headless (<code>-p</code>) com <code>--output-format json</code>, ferramentas de leitura apenas e limite de turnos</button>
+  <div class="explain">Saída consumida por máquina deve ser estruturada; revisão não precisa de escrita; o teto de turnos controla custo e tempo.</div>
+</div>
+
+<div class="quiz" data-answer="a">
+  <div class="q">8. <em>Extração em massa.</em> É preciso classificar 300 mil tickets antigos para um relatório que será lido na semana que vem. O que reduz mais o custo sem perder qualidade?</div>
+  <button class="opt" data-opt="a">Message Batches API com o prompt de instruções em cache</button>
+  <button class="opt" data-opt="b">Chamadas síncronas em paralelo máximo</button>
+  <button class="opt" data-opt="c">Streaming</button>
+  <button class="opt" data-opt="d">Um modelo de embeddings para gerar o texto da classificação</button>
+  <div class="explain">Sem urgência e em alto volume: batch (cerca de metade do preço). O prompt fixo repetido também se beneficia do caching.</div>
+</div>
+
+<div class="quiz" data-answer="c">
+  <div class="q">9. <em>Confiabilidade.</em> No pico, parte das chamadas retorna 429. O que fazer?</div>
+  <button class="opt" data-opt="a">Repetir imediatamente até conseguir</button>
+  <button class="opt" data-opt="b">Trocar a API key a cada erro</button>
+  <button class="opt" data-opt="c">Retry com backoff exponencial e jitter, respeitando <code>retry-after</code>, mais uma fila para suavizar o pico</button>
+  <button class="opt" data-opt="d">Desligar o recurso de IA durante o pico</button>
+  <div class="explain">Retry imediato piora o congestionamento. Backoff com jitter espalha as tentativas; a fila absorve a demanda.</div>
+</div>
+
+<div class="quiz" data-answer="b">
+  <div class="q">10. <em>Produtividade do dev.</em> O time tem um procedimento de 2 páginas para criar migrações de banco, com um script de validação. É usado algumas vezes por semana. Onde colocar?</div>
+  <button class="opt" data-opt="a">No <code>CLAUDE.md</code> do projeto</button>
+  <button class="opt" data-opt="b">Numa skill, com o script junto, e uma descrição que diga quando usá-la</button>
+  <button class="opt" data-opt="c">Num hook <code>PreToolUse</code></button>
+  <button class="opt" data-opt="d">No <code>~/.claude/CLAUDE.md</code> de quem cria migrações</button>
+  <div class="explain">Procedimento longo, com arquivos de apoio e uso eventual é o caso típico de skill: só entra no contexto quando relevante. No CLAUDE.md custaria contexto em toda sessão.</div>
+</div>
+
+<div class="quiz" data-answer="d">
+  <div class="q">11. <em>Contexto.</em> Um agente de suporte com system prompt de 6 mil tokens e 12 tools recebe milhares de conversas por dia. A conta está alta. Qual a primeira otimização?</div>
+  <button class="opt" data-opt="a">Cortar o system prompt pela metade sem avaliar</button>
+  <button class="opt" data-opt="b">Colocar a data e hora atual no início do system prompt</button>
+  <button class="opt" data-opt="c">Usar Batch API para as conversas</button>
+  <button class="opt" data-opt="d">Prompt caching nas tools e no system prompt, mantendo o que varia no fim</button>
+  <div class="explain">Prefixo grande e idêntico em todas as chamadas é o caso ideal de caching. Data no início quebraria o cache; batch não serve para conversa em tempo real.</div>
+</div>
+
+<div class="quiz" data-answer="a">
+  <div class="q">12. <em>Arquitetura.</em> Toda nota fiscal recebida passa por: extrair dados, validar CNPJ, lançar no ERP. Os passos nunca mudam. Qual arquitetura?</div>
+  <button class="opt" data-opt="a">Workflow em código (prompt chaining), com o LLM só na etapa de extração</button>
+  <button class="opt" data-opt="b">Um agente autônomo com as três tools</button>
+  <button class="opt" data-opt="c">Coordenador com três subagentes</button>
+  <button class="opt" data-opt="d">Um agente com <code>bypassPermissions</code> para não travar</button>
+  <div class="explain">Passos fixos não precisam de um modelo decidindo a ordem. Workflow é mais barato, rápido e previsível.</div>
+</div>
+
+<!-- ============================================================ -->
+<h2 id="recursos">Recursos</h2>
+<div class="resources">
+  <div class="box courses"><h4>🎓 Anthropic Academy (gratuitos)</h4><ul>
+    <li><a href="https://anthropic.skilljar.com/claude-with-the-anthropic-api">Building with the Claude API</a></li>
+    <li><a href="https://anthropic.skilljar.com/introduction-to-model-context-protocol">Introduction to Model Context Protocol</a></li>
+    <li><a href="https://anthropic.skilljar.com/model-context-protocol-advanced-topics">MCP: Advanced Topics</a></li>
+    <li><a href="https://anthropic.skilljar.com/claude-code-in-action">Claude Code in Action</a></li>
+    <li><a href="https://anthropic.skilljar.com/introduction-to-agent-skills">Introduction to agent skills</a></li>
+    <li><a href="https://anthropic.skilljar.com/introduction-to-subagents">Introduction to subagents</a></li>
+  </ul></div>
+  <div class="box docs"><h4>📘 Documentação essencial</h4><ul>
+    <li><a href="https://platform.claude.com/docs/en/agents-and-tools/tool-use/overview">Tool use</a> · <a href="https://platform.claude.com/docs/en/build-with-claude/structured-outputs">Structured outputs</a></li>
+    <li><a href="https://platform.claude.com/docs/en/agent-sdk/overview">Agent SDK</a></li>
+    <li><a href="https://platform.claude.com/docs/en/build-with-claude/prompt-caching">Prompt caching</a> · <a href="https://platform.claude.com/docs/en/build-with-claude/batch-processing">Batch processing</a></li>
+    <li><a href="https://platform.claude.com/docs/en/api/errors">Errors</a> · <a href="https://platform.claude.com/docs/en/api/rate-limits">Rate limits</a></li>
+    <li><a href="https://code.claude.com/docs/en/settings">Settings</a> · <a href="https://code.claude.com/docs/en/iam">Permissões</a> · <a href="https://code.claude.com/docs/en/memory">Memory</a></li>
+    <li><a href="https://code.claude.com/docs/en/hooks">Hooks</a> · <a href="https://code.claude.com/docs/en/skills">Skills</a> · <a href="https://code.claude.com/docs/en/sub-agents">Subagents</a></li>
+    <li><a href="https://code.claude.com/docs/en/headless">Headless</a> · <a href="https://code.claude.com/docs/en/github-actions">GitHub Actions</a> · <a href="https://code.claude.com/docs/en/mcp">MCP no Claude Code</a></li>
+  </ul></div>
+  <div class="box reading"><h4>📄 Leituras da Anthropic</h4><ul>
+    <li><a href="https://www.anthropic.com/engineering/building-effective-agents">Building effective agents</a></li>
+    <li><a href="https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents">Effective context engineering for AI agents</a></li>
+    <li><a href="https://www.anthropic.com/engineering/writing-tools-for-agents">Writing effective tools for agents</a></li>
+    <li><a href="https://www.anthropic.com/engineering/claude-code-best-practices">Claude Code best practices</a></li>
+  </ul></div>
+  <div class="box videos"><h4>▶️ Vídeos</h4><ul>
+    <li><a href="https://www.youtube.com/watch?v=gv0WHhKelSE">Claude Code best practices</a> — Cal Rueb (Anthropic)</li>
+    <li><a href="https://www.youtube.com/watch?v=ysPbXH0LpIE">Prompting 101</a> — Anthropic</li>
+    <li><a href="https://www.youtube.com/watch?v=D7_ipDqhtwk">How We Build Effective Agents</a> — Barry Zhang (Anthropic)</li>
+    <li><a href="https://www.youtube.com/watch?v=kQmXtrmQ5Zg">Building Agents with MCP — Full Workshop</a> — Mahesh Murag (Anthropic)</li>
+  </ul></div>
+</div>
+
+</article>
+</main>
+</body>
+</html>

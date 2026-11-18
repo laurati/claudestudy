@@ -28,6 +28,12 @@
 
 <!-- ============================================================ -->
 <h2 id="fundamentos">Fundamentos</h2>
+<div class="ficha">
+  <div class="obj"><h5>🎯 Objetivo</h5><p>Entender o que é prompt engineering e os princípios que valem para qualquer modelo: clareza, contexto, porquê, exemplos e estrutura.</p></div>
+  <div class="serve"><h5>🧩 Para que serve</h5><p>Fazer a IA acertar de primeira com mais frequência, reduzindo retrabalho, custo e respostas genéricas.</p></div>
+  <div class="usar"><h5>✅ Quando usar</h5><p>Em toda interação com um LLM — do chat do dia a dia ao prompt de sistema de uma aplicação em produção.</p></div>
+  <div class="evitar"><h5>⛔ Quando evitar / cuidados</h5><p>Não caia em "prompts mágicos" copiados da internet nem em CAIXA ALTA e ameaças ("NUNCA!!!"): explicar o motivo funciona melhor e é mais fácil de manter.</p></div>
+</div>
 <h3>A importância do Prompt Engineering no desenvolvimento</h3>
 <p>Um LLM é como um colega brilhante que acabou de chegar na empresa: sabe muito, mas <strong>não conhece seu projeto, suas convenções nem o que você considera "pronto"</strong>. Prompt engineering é a disciplina de dar a esse colega as instruções, o contexto e os exemplos certos — e de iterar com base em testes.</p>
 <p>O teste de ouro da documentação do Claude: <em>se você mostrasse o prompt a um colega sem contexto, ele saberia exatamente o que fazer?</em> Se não, o modelo também não saberá.</p>
@@ -57,6 +63,12 @@
 
 <!-- ============================================================ -->
 <h2 id="tecnicas">Técnicas de Prompt e Raciocínio Estruturado</h2>
+<div class="ficha">
+  <div class="obj"><h5>🎯 Objetivo</h5><p>Conhecer as técnicas clássicas (zero/few-shot, role, CoT, self-consistency, ToT, ReAct…) e saber qual aplicar a cada tipo de tarefa.</p></div>
+  <div class="serve"><h5>🧩 Para que serve</h5><p>Melhorar a qualidade em tarefas de raciocínio, padronizar formatos de saída e permitir que o modelo use ferramentas de forma estruturada.</p></div>
+  <div class="usar"><h5>✅ Quando usar</h5><ul><li><strong>Few-shot:</strong> o formato da saída importa.</li><li><strong>CoT / thinking:</strong> matemática, lógica, decisões com várias etapas.</li><li><strong>ReAct:</strong> o modelo precisa buscar informação ou agir antes de responder.</li></ul></div>
+  <div class="evitar"><h5>⛔ Quando evitar / cuidados</h5><p>CoT em tarefas simples (classificar sentimento) só gasta tokens e latência. Exemplos few-shot muito parecidos entre si fazem o modelo copiar detalhes irrelevantes.</p></div>
+</div>
 
 <h3>Zero-shot e Few-shot Prompting</h3>
 <p><strong>Zero-shot</strong>: só a instrução, sem exemplos. Funciona para tarefas comuns. <strong>Few-shot</strong> (ou <em>multishot</em>): incluir de 3 a 5 exemplos de entrada → saída. É a forma mais confiável de fixar formato, tom e casos de borda. Os exemplos devem ser <em>relevantes</em>, <em>diversos</em> (cobrindo casos difíceis) e <em>claramente delimitados</em>.</p>
@@ -147,6 +159,12 @@ print(chain.invoke({"story": "Como cliente, quero cancelar um pedido em até 24h
 
 <!-- ============================================================ -->
 <h2 id="contexto">Janela de Contexto e Otimização</h2>
+<div class="ficha">
+  <div class="obj"><h5>🎯 Objetivo</h5><p>Gerenciar a janela de contexto: o que entra, o que sai, quanto custa e como reaproveitar com caching e batch.</p></div>
+  <div class="serve"><h5>🧩 Para que serve</h5><p>Reduzir custo e latência e evitar que conversas longas "esqueçam" instruções ou estourem o limite.</p></div>
+  <div class="usar"><h5>✅ Quando usar</h5><p>Em chats longos, agentes que rodam por muitas etapas, prompts com documentos grandes repetidos (caching) e processamento em massa sem urgência (batch, ~50% mais barato).</p></div>
+  <div class="evitar"><h5>⛔ Quando evitar / cuidados</h5><p>Não jogue "tudo" no contexto só porque cabe: informação irrelevante dilui a atenção e piora a resposta. Prompt caching só ajuda se o prefixo for idêntico entre chamadas.</p></div>
+</div>
 
 <h3>Context Window vs memória</h3>
 <p>O LLM é <strong>sem estado</strong> (<em>stateless</em>): a cada chamada você reenvia tudo o que ele precisa saber. A "memória" de um chat é só a aplicação reenviando o histórico. Já a <strong>memória de longo prazo</strong> é algo que você implementa fora do modelo: arquivos (como o <code>CLAUDE.md</code> do Claude Code), um banco de dados, um banco vetorial ou a <a href="https://platform.claude.com/docs/en/agents-and-tools/tool-use/memory-tool">memory tool</a>, de onde se recupera o que for relevante para colocar na janela.</p>
@@ -220,6 +238,12 @@ for r in client.messages.batches.results(batch.id):
 
 <!-- ============================================================ -->
 <h2 id="estrutura">Estrutura básica de prompts</h2>
+<div class="ficha">
+  <div class="obj"><h5>🎯 Objetivo</h5><p>Organizar prompts em partes reutilizáveis: system × user, templates com variáveis, módulos por função.</p></div>
+  <div class="serve"><h5>🧩 Para que serve</h5><p>Tornar prompts manuteníveis como código: fáceis de ler, testar, versionar e reaproveitar em várias features.</p></div>
+  <div class="usar"><h5>✅ Quando usar</h5><p>Assim que um prompt sai do chat e entra numa aplicação, ou quando o time começa a copiar o mesmo prompt em vários lugares.</p></div>
+  <div class="evitar"><h5>⛔ Quando evitar / cuidados</h5><p>Não coloque dados do usuário no system prompt (mistura instrução com dado e facilita prompt injection). Não crie abstrações de template antes de ter 2–3 prompts reais parecidos.</p></div>
+</div>
 
 <h3>Modularização de prompts para funções específicas</h3>
 <p>Em vez de um "prompt-monstro" que faz tudo, crie prompts <strong>pequenos e com uma responsabilidade</strong> (assim como funções): <code>classificar_intencao</code>, <code>extrair_entidades</code>, <code>redigir_resposta</code>. Cada um pode ser testado, versionado, cacheado e trocado de modelo de forma independente.</p>
@@ -270,6 +294,12 @@ prompt = REVIEW.render(guia=open("STYLE.md").read(), linguagem="go", diff=diff_t
 
 <!-- ============================================================ -->
 <h2 id="templates">Template de prompts para o dia a dia</h2>
+<div class="ficha">
+  <div class="obj"><h5>🎯 Objetivo</h5><p>Ter uma biblioteca de prompts prontos para as situações recorrentes do dev: projeto novo, legado, documentação, testes, code review, brainstorming.</p></div>
+  <div class="serve"><h5>🧩 Para que serve</h5><p>Ganhar velocidade e consistência: em vez de escrever do zero, você parte de um esqueleto testado e só preenche o contexto.</p></div>
+  <div class="usar"><h5>✅ Quando usar</h5><p>Toda vez que você perceber que já escreveu um prompt parecido antes. Transforme-o em comando (<code>.claude/commands</code>, skill, snippet).</p></div>
+  <div class="evitar"><h5>⛔ Quando evitar / cuidados</h5><p>Template não substitui contexto: um prompt de code review genérico sem as convenções do seu projeto gera comentários genéricos.</p></div>
+</div>
 <p>Monte uma <strong>biblioteca pessoal/do time</strong> com templates para as situações recorrentes. Abaixo, esqueletos para cada categoria da grade:</p>
 
 <h3>Novas aplicações</h3>
@@ -318,6 +348,12 @@ Síntese: pontos de consenso, divergências, e perguntas que precisamos responde
 
 <!-- ============================================================ -->
 <h2 id="agentes-workflows">Prompts para Agentes e Workflows</h2>
+<div class="ficha">
+  <div class="obj"><h5>🎯 Objetivo</h5><p>Escrever prompts para agentes que executam várias etapas: objetivo, ferramentas, critérios de parada, formato de relatório.</p></div>
+  <div class="serve"><h5>🧩 Para que serve</h5><p>Fazer agentes trabalharem de forma previsível e verificável, sem se perder, repetir trabalho ou parar cedo demais.</p></div>
+  <div class="usar"><h5>✅ Quando usar</h5><p>Ao configurar subagentes, workflows de CI com IA, análises de arquitetura e qualquer tarefa que o agente executa sozinho por vários passos.</p></div>
+  <div class="evitar"><h5>⛔ Quando evitar / cuidados</h5><p>Não dê a um agente um objetivo vago ("melhore o projeto"). Sem critério de conclusão verificável, ele para cedo ou faz mudanças demais.</p></div>
+</div>
 
 <h3>Estruturas de prompts para execução de agentes</h3>
 <p>O system prompt de um agente funciona como um "manual de operação". Estrutura recomendada:</p>
@@ -358,6 +394,12 @@ steps:
 
 <!-- ============================================================ -->
 <h2 id="versionamento">Gestão e Versionamento de Prompts</h2>
+<div class="ficha">
+  <div class="obj"><h5>🎯 Objetivo</h5><p>Tratar prompts como artefatos de software: versionados, documentados, organizados num registry e testados automaticamente.</p></div>
+  <div class="serve"><h5>🧩 Para que serve</h5><p>Saber qual versão do prompt está em produção, reverter quando a qualidade cai e permitir que o time colabore sem sobrescrever o trabalho do outro.</p></div>
+  <div class="usar"><h5>✅ Quando usar</h5><p>Assim que um prompt vai para produção ou é compartilhado por mais de uma pessoa.</p></div>
+  <div class="evitar"><h5>⛔ Quando evitar / cuidados</h5><p>Não guarde prompts só em ferramenta de terceiros sem export/versionamento, nem embutidos em strings espalhadas pelo código.</p></div>
+</div>
 
 <h3>Versionamento e controle de versão em equipe</h3>
 <p>Prompts são <strong>código</strong>: mudam o comportamento do sistema e precisam de revisão, histórico e rollback. Guarde-os no Git, versione semanticamente (mudança de formato de saída = major) e associe cada versão aos resultados de avaliação.</p>
@@ -420,6 +462,12 @@ def test_classificacao(caso):
 
 <!-- ============================================================ -->
 <h2 id="query-reformulation">Query Reformulation e Prompt Enrichment</h2>
+<div class="ficha">
+  <div class="obj"><h5>🎯 Objetivo</h5><p>Melhorar a busca (RAG) reescrevendo ou enriquecendo a pergunta do usuário antes de consultar o índice.</p></div>
+  <div class="serve"><h5>🧩 Para que serve</h5><p>Aumentar a chance de encontrar o trecho certo quando a pergunta é curta, ambígua, depende do histórico ou usa palavras diferentes das do documento.</p></div>
+  <div class="usar"><h5>✅ Quando usar</h5><p>Em chatbots com histórico ("e o prazo?"), bases com jargão técnico, perguntas compostas e quando as métricas de recuperação estão baixas.</p></div>
+  <div class="evitar"><h5>⛔ Quando evitar / cuidados</h5><p>Cada reformulação é uma chamada extra ao LLM (latência e custo). Se a busca já encontra bem os documentos, não adicione etapas.</p></div>
+</div>
 <p>Em sistemas de busca e RAG, a pergunta do usuário muitas vezes é curta, ambígua ou usa palavras diferentes das do documento. Reformular a consulta antes de buscar melhora muito a recuperação.</p>
 
 <h3>Reformulação e enriquecimento de queries</h3>
@@ -445,6 +493,12 @@ def test_classificacao(caso):
 
 <!-- ============================================================ -->
 <h2 id="evaluation">Prompt Evaluation</h2>
+<div class="ficha">
+  <div class="obj"><h5>🎯 Objetivo</h5><p>Medir objetivamente a qualidade de um prompt com critérios de sucesso, datasets e evaluators.</p></div>
+  <div class="serve"><h5>🧩 Para que serve</h5><p>Trocar "achismo" por números: saber se a mudança no prompt (ou a troca de modelo) melhorou ou piorou, antes de ir para produção.</p></div>
+  <div class="usar"><h5>✅ Quando usar</h5><p>Antes de colocar qualquer prompt em produção, a cada alteração relevante e ao comparar modelos (custo × qualidade).</p></div>
+  <div class="evitar"><h5>⛔ Quando evitar / cuidados</h5><p>Não avalie com 3 exemplos escolhidos a dedo. E não use só LLM-as-judge sem calibrar com avaliação humana em parte da amostra.</p></div>
+</div>
 
 <h3>Objetivos, métricas e tipos de avaliação</h3>
 <p>Antes de otimizar, defina <strong>critérios de sucesso</strong> específicos e mensuráveis (<a href="https://platform.claude.com/docs/en/test-and-evaluate/define-success">Define success criteria</a>): "classificar corretamente ≥ 95% dos tickets", "respostas com menos de 150 palavras", "0 vazamentos de dados pessoais".</p>
@@ -466,8 +520,43 @@ def test_classificacao(caso):
 <h3>Embedding distance e critérios adicionais</h3>
 <p><strong>Embedding distance</strong>: gera embeddings da resposta e da referência e mede a similaridade de cosseno — tolerante a paráfrases, mas não detecta erros sutis de fato ("aceita" vs "não aceita" podem ficar próximos). Por isso, combine com critérios adicionais: tamanho, presença de citações, ausência de PII, latência, custo.</p>
 
+<div class="example">
+  <h4>Exemplo: um eval mínimo em Python (classificação de tickets)</h4>
+<pre><code>import anthropic, json
+
+client = anthropic.Anthropic()
+dataset = [  # comece com 20–50 casos reais, incluindo casos difíceis
+    {"ticket": "Fui cobrado duas vezes no cartão", "esperado": "financeiro"},
+    {"ticket": "O app fecha quando abro o carrinho", "esperado": "bug"},
+    {"ticket": "Vocês entregam em Manaus?", "esperado": "logistica"},
+]
+
+def classificar(prompt_versao: str, ticket: str) -&gt; str:
+    r = client.messages.create(
+        model="claude-haiku-5-5", max_tokens=10,
+        system=prompt_versao,
+        messages=[{"role": "user", "content": ticket}],
+    )
+    return r.content[0].text.strip().lower()
+
+def avaliar(prompt_versao: str) -&gt; float:
+    acertos = sum(classificar(prompt_versao, c["ticket"]) == c["esperado"] for c in dataset)
+    return acertos / len(dataset)
+
+v1 = "Classifique o ticket em: financeiro, bug, logistica. Responda só a categoria."
+v2 = v1 + " Cobranças, reembolsos e boletos são financeiro; travamentos e erros são bug."
+print({"v1": avaliar(v1), "v2": avaliar(v2)})   # ex.: {'v1': 0.86, 'v2': 0.95}</code></pre>
+  <p>Rode esse script no CI sempre que o prompt mudar: se a acurácia cair abaixo do limite combinado, o pipeline falha — igual a um teste unitário.</p>
+</div>
+
 <!-- ============================================================ -->
 <h2 id="evaluation-comparativa">Evaluation Comparativa</h2>
+<div class="ficha">
+  <div class="obj"><h5>🎯 Objetivo</h5><p>Comparar versões de prompts/modelos com métricas de classificação (precision, recall, F1), comparação par a par e LLM-as-judge.</p></div>
+  <div class="serve"><h5>🧩 Para que serve</h5><p>Decidir com segurança entre duas alternativas e entender <em>que tipo</em> de erro cada uma comete (falsos positivos × falsos negativos).</p></div>
+  <div class="usar"><h5>✅ Quando usar</h5><p>Em testes A/B de prompts, escolha de modelo e quando o erro tem custos diferentes (ex.: deixar passar fraude × bloquear cliente legítimo).</p></div>
+  <div class="evitar"><h5>⛔ Quando evitar / cuidados</h5><p>LLM-as-judge tem vieses (prefere respostas longas, a primeira opção, o próprio estilo). Alterne a ordem das opções e use rubricas objetivas.</p></div>
+</div>
 
 <h3>Precision, Recall e F1</h3>
 <p>Para tarefas de classificação/extração (ex.: "o prompt detecta tickets de fraude?"):</p>
@@ -528,10 +617,9 @@ responde = trata diretamente a pergunta. Raciocine e depois dê a nota."""}],
     <li><a href="https://platform.claude.com/docs/en/test-and-evaluate/develop-tests">Develop tests (evals)</a></li>
   </ul></div>
   <div class="box videos"><h4>▶️ Vídeos</h4><ul>
-    <li><a href="https://www.youtube.com/@anthropic-ai">Canal oficial da Anthropic</a> — inclui o painel "AI prompt engineering: a deep dive"</li>
-    <li><a href="https://www.youtube.com/results?search_query=anthropic+prompt+engineering+deep+dive">Buscar: Anthropic prompt engineering deep dive</a></li>
-    <li><a href="https://www.youtube.com/results?search_query=prompt+engineering+para+desenvolvedores+portugu%C3%AAs">Buscar: prompt engineering para devs (PT-BR)</a></li>
-    <li><a href="https://www.youtube.com/results?search_query=LLM+as+a+judge+evaluation+tutorial">Buscar: LLM-as-a-judge tutorial</a></li>
+    <li><a href="https://www.youtube.com/watch?v=ysPbXH0LpIE">Prompting 101</a> — Anthropic (Code w/ Claude). Monta um prompt real passo a passo: papel, contexto, instruções, exemplos e proteção contra alucinação. Comece por este.</li>
+    <li><a href="https://www.youtube.com/watch?v=T9aRN5JkmL8">AI prompt engineering: a deep dive</a> — painel da Anthropic com Amanda Askell, Alex Albert e David Hershey sobre como pensam ao escrever prompts.</li>
+    <li><a href="https://www.youtube.com/watch?v=Qj3u_kzfJVo">LLM-as-a-judge: evaluating LLMs with LLMs</a> — como funciona a avaliação por LLM-juiz e como montar a sua (tópico Evaluation comparativa).</li>
   </ul></div>
   <div class="box courses"><h4>🎓 Cursos</h4><ul>
     <li><a href="https://github.com/anthropics/prompt-eng-interactive-tutorial">Prompt Engineering Interactive Tutorial</a> — Anthropic (gratuito, Jupyter)</li>
